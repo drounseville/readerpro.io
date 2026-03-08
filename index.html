@@ -3,256 +3,223 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ReaderPro — Door Programmer</title>
+<title>ReaderPro.io — Door Programmer</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
 <style>
   :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --surface2: #22263a;
-    --border: #2e3350;
-    --accent: #4f8ef7;
-    --green: #22c55e;
-    --yellow: #f59e0b;
-    --orange: #f97316;
-    --red: #ef4444;
-    --text: #e2e8f0;
-    --muted: #64748b;
-    --radius: 8px;
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3350;
+    --accent: #4f8ef7; --green: #22c55e; --yellow: #f59e0b; --orange: #f97316;
+    --red: #ef4444; --text: #e2e8f0; --muted: #64748b; --radius: 8px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; min-height: 100vh; }
 
   /* ── Header ── */
-  header {
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;
-    position: sticky; top: 0; z-index: 100; gap: 12px; flex-wrap: wrap;
+  header { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .header-top, .header-bottom {
+    padding: 9px 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   }
-  .logo { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; white-space: nowrap; }
-  .logo span { color: var(--muted); font-weight: 400; }
-  .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .header-top { border-bottom: 1px solid var(--border); justify-content: space-between; }
+  .header-bottom { justify-content: space-between; background: rgba(0,0,0,0.15); }
+  .logo { font-size: 17px; font-weight: 800; color: var(--accent); letter-spacing: -0.5px; white-space: nowrap; }
+  .header-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .header-sep { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
 
   /* ── Buttons ── */
   .btn {
-    padding: 7px 14px; border-radius: var(--radius); border: none; cursor: pointer;
-    font-size: 13px; font-weight: 600; transition: opacity 0.15s, transform 0.1s; white-space: nowrap;
+    padding: 6px 13px; border-radius: var(--radius); border: none; cursor: pointer;
+    font-size: 12px; font-weight: 600; transition: opacity 0.15s, transform 0.1s; white-space: nowrap;
   }
-  .btn:hover { opacity: 0.85; }
-  .btn:active { transform: scale(0.97); }
+  .btn:hover { opacity: 0.85; } .btn:active { transform: scale(0.97); }
   .btn-primary   { background: var(--accent); color: #fff; }
   .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
   .btn-success   { background: var(--green); color: #fff; }
   .btn-danger    { background: transparent; color: var(--red); border: 1px solid var(--red); }
   .btn-purple    { background: #7c3aed; color: #fff; }
+  .btn-teal      { background: #0d9488; color: #fff; }
   .btn-sm  { padding: 4px 10px; font-size: 12px; }
-  .btn-icon { padding: 6px 9px; font-size: 14px; background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-icon { padding: 5px 8px; font-size: 13px; background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+  /* ── SVG Icons ── */
+  .btn svg { width: 13px; height: 13px; vertical-align: -2px; flex-shrink: 0; }
+  .btn svg + span { margin-left: 5px; }
+  .btn-icon svg { width: 13px; height: 13px; }
+  .panel-card-header svg.panel-icon { width: 15px; height: 15px; color: var(--accent); flex-shrink: 0; vertical-align: -2px; }
 
   /* ── Layout ── */
-  main { max-width: 1400px; margin: 0 auto; padding: 24px; }
+  main { max-width: 1400px; margin: 0 auto; padding: 20px; }
 
   /* ── Project bar ── */
   .project-bar {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 14px 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;
+    padding: 12px 18px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 18px;
   }
   .project-bar label { color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
   .project-bar input, .project-bar select {
     background: var(--surface2); border: 1px solid var(--border); color: var(--text);
-    border-radius: 6px; padding: 6px 10px; font-size: 13px; min-width: 160px;
+    border-radius: 6px; padding: 5px 9px; font-size: 13px; min-width: 140px;
   }
   .project-bar input:focus, .project-bar select:focus { outline: 2px solid var(--accent); border-color: transparent; }
-  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  .field-group { display: flex; flex-direction: column; gap: 3px; }
 
   /* ── Panel cards ── */
-  .panel-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+  .panel-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 18px; }
   .panel-card-header {
-    background: var(--surface2); padding: 10px 14px;
-    display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid var(--border); gap: 8px; flex-wrap: wrap;
+    background: var(--surface2); padding: 9px 14px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
   }
-  .panel-name-input {
-    background: transparent; border: none; color: var(--text); font-size: 14px; font-weight: 700; flex: 1; min-width: 120px;
-  }
+  .panel-name-input { background: transparent; border: none; color: var(--text); font-size: 14px; font-weight: 700; flex: 1; min-width: 120px; }
   .panel-card-body { padding: 14px; }
   .panel-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
   .meta-field label { color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 3px; }
-  .meta-field input, .meta-field select {
-    width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
-    border-radius: 6px; padding: 5px 8px; font-size: 13px;
-  }
-  .meta-field input:focus, .meta-field select:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .meta-field input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 5px 8px; font-size: 13px; }
+  .meta-field input:focus { outline: 2px solid var(--accent); border-color: transparent; }
 
-  /* Progress bar in panel header */
+  /* Panel progress */
   .panel-progress { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
-  .prog-chip {
-    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px;
-  }
-  .prog-chip.designed    { background: rgba(79,142,247,0.2);  color: #7eb4ff; }
-  .prog-chip.programmed  { background: rgba(245,158,11,0.2);  color: #fbbf24; }
-  .prog-chip.tested      { background: rgba(249,115,22,0.2);  color: #fb923c; }
-  .prog-chip.commissioned { background: rgba(34,197,94,0.2); color: #4ade80; }
+  .prog-chip { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+  .prog-chip.designed     { background: rgba(79,142,247,0.2);  color: #7eb4ff; }
+  .prog-chip.programmed   { background: rgba(245,158,11,0.2);  color: #fbbf24; }
+  .prog-chip.tested       { background: rgba(249,115,22,0.2);  color: #fb923c; }
+  .prog-chip.commissioned { background: rgba(34,197,94,0.2);   color: #4ade80; }
+  .status-bar-wrap { display: flex; height: 3px; overflow: hidden; gap: 2px; }
+  .status-bar-seg { transition: flex 0.3s; }
+  .sb-designed    { background: #4f8ef7; } .sb-programmed  { background: #f59e0b; }
+  .sb-tested      { background: #f97316; } .sb-commissioned { background: #22c55e; }
 
   /* ── Doors table ── */
   .doors-table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th {
     background: var(--surface2); color: var(--muted); font-size: 11px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 8px;
+    text-transform: uppercase; letter-spacing: 0.04em; padding: 7px 7px;
     text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap;
   }
   td { padding: 5px 5px; border-bottom: 1px solid var(--border); vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: rgba(79,142,247,0.04); }
-
   td input, td select {
     width: 100%; background: transparent; border: 1px solid transparent; color: var(--text);
-    border-radius: 4px; padding: 4px 6px; font-size: 13px; min-width: 70px;
+    border-radius: 4px; padding: 4px 5px; font-size: 12px; min-width: 60px;
   }
   td input:hover, td select:hover { border-color: var(--border); background: var(--surface2); }
   td input:focus, td select:focus { outline: 2px solid var(--accent); border-color: transparent; background: var(--surface2); }
   td input[type="checkbox"] { width: auto; min-width: unset; cursor: pointer; }
 
-  /* Status select colors */
-  .status-select { min-width: 110px !important; font-weight: 600 !important; }
-  .status-designed    { color: #7eb4ff !important; }
-  .status-programmed  { color: #fbbf24 !important; }
-  .status-tested      { color: #fb923c !important; }
-  .status-commissioned { color: #4ade80 !important; }
+  /* Status select */
+  .status-select { min-width: 105px !important; font-weight: 600 !important; }
+  .status-designed    { color: #7eb4ff !important; } .status-programmed  { color: #fbbf24 !important; }
+  .status-tested      { color: #fb923c !important; } .status-commissioned { color: #4ade80 !important; }
+
+  /* Supervision select */
+  .sup-select { min-width: 85px !important; }
+  .sup-supervised { color: #34d399 !important; font-weight: 600 !important; }
 
   .add-row td { padding: 8px 6px; background: rgba(79,142,247,0.04); }
 
   /* ── Output panel ── */
-  .output-wrap {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    overflow: hidden; margin-top: 28px;
-  }
+  .output-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 24px; }
   .output-header {
-    background: var(--surface2); padding: 10px 16px;
+    background: var(--surface2); padding: 9px 16px;
     display: flex; align-items: center; justify-content: space-between;
     border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 8px;
   }
   .output-tabs { display: flex; gap: 4px; }
-  .tab-btn {
-    padding: 4px 12px; border-radius: 6px; border: none; cursor: pointer;
-    font-size: 12px; font-weight: 600; background: transparent; color: var(--muted); transition: all 0.15s;
-  }
+  .tab-btn { padding: 4px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; background: transparent; color: var(--muted); transition: all 0.15s; }
   .tab-btn.active { background: var(--accent); color: #fff; }
-  .output-body pre {
-    padding: 16px; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-    font-size: 12px; line-height: 1.7; color: #a5f3fc; overflow-x: auto;
-    white-space: pre; max-height: 420px; overflow-y: auto;
-  }
+  .output-body pre { padding: 16px; font-family: 'Cascadia Code','Fira Code','Consolas',monospace; font-size: 12px; line-height: 1.7; color: #a5f3fc; overflow-x: auto; white-space: pre; max-height: 420px; overflow-y: auto; }
 
   /* ── Empty states ── */
   .empty-state { text-align: center; color: var(--muted); padding: 40px; }
   .empty-state .big { font-size: 36px; margin-bottom: 10px; }
 
   /* ── Toast ── */
-  #toast {
-    position: fixed; bottom: 24px; right: 24px; background: var(--green); color: #fff;
-    padding: 10px 20px; border-radius: var(--radius); font-weight: 600; font-size: 13px;
-    opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 9999;
-  }
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--green); color: #fff; padding: 10px 20px; border-radius: var(--radius); font-weight: 600; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 9999; }
   #toast.show { opacity: 1; pointer-events: auto; }
 
   /* ── BOM Modal ── */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 500;
-    display: flex; align-items: center; justify-content: center; padding: 20px;
-  }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
   .modal-overlay.hidden { display: none; }
-  .modal {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-    width: 100%; max-width: 720px; max-height: 85vh; overflow-y: auto;
-  }
-  .modal-header {
-    background: var(--surface2); padding: 14px 20px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between; border-radius: 12px 12px 0 0;
-    position: sticky; top: 0;
-  }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 720px; max-height: 85vh; overflow-y: auto; }
+  .modal-header { background: var(--surface2); padding: 13px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; border-radius: 12px 12px 0 0; position: sticky; top: 0; }
   .modal-header h2 { font-size: 15px; font-weight: 700; }
   .modal-body { padding: 20px; }
-  .bom-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; }
-  .bom-stat {
-    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 12px; text-align: center;
-  }
-  .bom-stat .num { font-size: 28px; font-weight: 800; color: var(--accent); }
+  .bom-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap: 10px; margin-bottom: 20px; }
+  .bom-stat { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; text-align: center; }
+  .bom-stat .num { font-size: 26px; font-weight: 800; color: var(--accent); }
   .bom-stat .lbl { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-top: 2px; }
-  .bom-section { margin-bottom: 20px; }
-  .bom-section h3 { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .bom-section { margin-bottom: 18px; }
+  .bom-section h3 { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
   .bom-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .bom-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
   .bom-table td:last-child { text-align: right; font-weight: 700; color: var(--accent); }
   .bom-table tr:last-child td { border-bottom: none; }
   .bom-bar-wrap { display: flex; align-items: center; gap: 8px; }
-  .bom-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .bom-bar { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
   .bom-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
-
-  /* ── Status progress bar ── */
-  .status-bar-wrap { margin-top: 8px; display: flex; height: 4px; border-radius: 2px; overflow: hidden; gap: 2px; }
-  .status-bar-seg { transition: flex 0.3s; }
-  .sb-designed    { background: #4f8ef7; }
-  .sb-programmed  { background: #f59e0b; }
-  .sb-tested      { background: #f97316; }
-  .sb-commissioned { background: #22c55e; }
-
-  select option { background: #1a1d27; }
   .badge { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); border-radius: 20px; padding: 2px 10px; font-size: 12px; }
+  select option { background: #1a1d27; }
 
-  /* ── Print styles ── */
+  /* ── Print ── */
   @media print {
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     body { background: #fff !important; color: #111 !important; font-family: Arial, sans-serif; font-size: 11px; }
-    header, .output-wrap, .header-actions, #toast, .modal-overlay,
-    .btn, #add-panel-btn, .add-row, #bom-modal { display: none !important; }
+    header, .output-wrap, #toast, .modal-overlay, #add-panel-btn, .add-row, #bom-modal { display: none !important; }
     main { padding: 0; max-width: 100%; }
-    .project-bar {
-      background: #f5f5f5 !important; border: 1px solid #ccc !important; border-radius: 4px;
-      padding: 10px; margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 12px;
-    }
+    .project-bar { background: #f5f5f5 !important; border: 1px solid #ccc !important; padding: 10px; margin-bottom: 12px; }
     .project-bar input, .project-bar select { background: transparent !important; border: none !important; color: #111 !important; min-width: unset; }
     .project-bar label { color: #555 !important; }
     .field-group { flex-direction: row; align-items: center; gap: 4px; }
-    .panel-card { background: #fff !important; border: 1px solid #ccc !important; margin-bottom: 16px; break-inside: avoid; }
-    .panel-card-header { background: #eee !important; padding: 8px 12px; }
-    .panel-name-input { color: #111 !important; font-size: 13px; }
+    .panel-card { background: #fff !important; border: 1px solid #ccc !important; margin-bottom: 14px; break-inside: avoid; }
+    .panel-card-header { background: #eee !important; padding: 7px 12px; }
+    .panel-name-input { color: #111 !important; }
     .panel-card-body { padding: 10px; }
-    .panel-meta { gap: 6px; margin-bottom: 8px; }
     .meta-field label { color: #555 !important; }
     .meta-field input { background: transparent !important; border: none !important; border-bottom: 1px solid #ccc !important; color: #111 !important; border-radius: 0; padding: 2px 0; }
     table { font-size: 10px; }
     th { background: #eee !important; color: #444 !important; padding: 5px 6px; border: 1px solid #ccc; }
-    td { padding: 4px 6px; border: 1px solid #ddd; color: #111 !important; }
+    td { padding: 4px 5px; border: 1px solid #ddd; color: #111 !important; }
     td input, td select { color: #111 !important; background: transparent !important; border: none !important; padding: 0; font-size: 10px; }
     tr:hover td { background: transparent !important; }
     .panel-progress, .prog-chip, .status-bar-wrap { display: none; }
-    .status-select { color: #111 !important; }
   }
 
-  @media (max-width: 700px) {
-    main { padding: 12px; }
-    .project-bar { flex-direction: column; align-items: flex-start; }
-  }
+  @media (max-width: 700px) { main { padding: 12px; } .project-bar { flex-direction: column; align-items: flex-start; } }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">ReaderPro <span>/ Door Programmer</span></div>
-  <div class="header-actions">
-    <button class="btn btn-secondary btn-sm" onclick="importFile()">📂 Import</button>
-    <button class="btn btn-secondary btn-sm" onclick="showBOM()">📊 BOM</button>
-    <button class="btn btn-purple btn-sm" onclick="shareURL()">🔗 Share Link</button>
-    <button class="btn btn-primary btn-sm" onclick="addPanel()">＋ Add Panel</button>
-    <button class="btn btn-secondary btn-sm" onclick="exportPDF()">📄 PDF</button>
-    <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨 Print</button>
-    <button class="btn btn-success btn-sm" onclick="exportYAML()">⬇ YAML</button>
-    <button class="btn btn-secondary btn-sm" onclick="exportJSON()">⬇ JSON</button>
+  <!-- Top row: branding + import/export -->
+  <div class="header-top">
+    <div class="logo">ReaderPro.io</div>
+    <div class="header-actions">
+      <button class="btn btn-secondary btn-sm" onclick="importFile()"><i data-lucide="upload"></i><span>Import</span></button>
+      <div class="header-sep"></div>
+      <button class="btn btn-secondary btn-sm" onclick="shareURL()"><i data-lucide="share-2"></i><span>Share</span></button>
+      <div class="header-sep"></div>
+      <button class="btn btn-secondary btn-sm" onclick="window.print()"><i data-lucide="printer"></i><span>Print</span></button>
+      <button class="btn btn-secondary btn-sm" onclick="exportPDF()"><i data-lucide="file-text"></i><span>PDF</span></button>
+      <button class="btn btn-secondary btn-sm" onclick="exportExcel()"><i data-lucide="table-2"></i><span>Excel</span></button>
+      <button class="btn btn-secondary btn-sm" onclick="exportYAML()"><i data-lucide="download"></i><span>YAML</span></button>
+      <button class="btn btn-secondary btn-sm" onclick="exportJSON()"><i data-lucide="download"></i><span>JSON</span></button>
+    </div>
+  </div>
+  <!-- Bottom row: tools + add panel -->
+  <div class="header-bottom">
+    <div class="header-actions">
+      <button class="btn btn-secondary btn-sm" onclick="showBOM()"><i data-lucide="clipboard-list"></i><span>Bill of Materials</span></button>
+      <button class="btn btn-secondary btn-sm" onclick="loadExample()"><i data-lucide="zap"></i><span>Load Example</span></button>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary btn-sm" onclick="addPanel()"><i data-lucide="plus"></i><span>Add Controller / Panel</span></button>
+    </div>
   </div>
 </header>
 
@@ -262,7 +229,7 @@
   <div class="project-bar">
     <div class="field-group">
       <label>Job #</label>
-      <input type="text" id="projJob" placeholder="e.g. 2024-0842" style="min-width:120px;" />
+      <input type="text" id="projJob" placeholder="e.g. 2024-0842" style="min-width:110px;" />
     </div>
     <div class="field-group">
       <label>Project Name</label>
@@ -275,10 +242,10 @@
     <div class="field-group">
       <label>Platform</label>
       <select id="projPlatform">
-        <option value="">— Select or type —</option>
+        <option value="">— Select —</option>
         <option>Lenel OnGuard</option>
         <option>Software House C•CURE 9000</option>
-        <option>Openpath</option>
+        <option>Avigilon Alta (OpenPath)</option>
         <option>Genetec Synergis</option>
         <option>Honeywell Pro-Watch</option>
         <option>AMAG Symmetry</option>
@@ -290,7 +257,15 @@
     </div>
     <div class="field-group">
       <label>Technician</label>
-      <input type="text" id="projTech" placeholder="Your name" />
+      <input type="text" id="projTech" placeholder="Your name" style="min-width:130px;" />
+    </div>
+    <div class="field-group">
+      <label>Contact Person</label>
+      <input type="text" id="projContact" placeholder="On-site contact" style="min-width:130px;" />
+    </div>
+    <div class="field-group">
+      <label>Contact Phone</label>
+      <input type="tel" id="projPhone" placeholder="(555) 555-5555" style="min-width:130px;" />
     </div>
     <div class="field-group">
       <label>Date</label>
@@ -301,12 +276,12 @@
   <!-- Panels -->
   <div id="panels-container"></div>
 
-  <div id="add-panel-btn" style="margin-bottom: 28px;">
-    <button class="btn btn-secondary" onclick="addPanel()">＋ Add Controller / Panel</button>
+  <div id="add-panel-btn" style="margin-bottom: 24px;">
+    <button class="btn btn-secondary" onclick="addPanel()" id="add-panel-body-btn"></button>
   </div>
 
   <!-- Output -->
-  <div class="output-wrap" id="output-section">
+  <div class="output-wrap">
     <div class="output-header">
       <span style="font-size:13px;font-weight:700;">Preview Output</span>
       <div style="display:flex;gap:8px;align-items:center;">
@@ -314,14 +289,11 @@
           <button class="tab-btn active" id="tab-yaml" onclick="switchTab('yaml')">YAML</button>
           <button class="tab-btn" id="tab-json" onclick="switchTab('json')">JSON</button>
         </div>
-        <button class="btn btn-secondary btn-sm" onclick="copyOutput()">📋 Copy</button>
+        <button class="btn btn-secondary btn-sm" onclick="copyOutput()"><i data-lucide="clipboard"></i><span>Copy</span></button>
       </div>
     </div>
     <div class="output-body" id="output-body">
-      <div class="empty-state">
-        <div class="big">🔐</div>
-        <div>Add a panel and some doors to see output</div>
-      </div>
+      <div class="empty-state"><div class="big" style="color:var(--muted)"><svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div>Add a panel and some doors to see output</div></div>
     </div>
   </div>
 
@@ -331,8 +303,8 @@
 <div class="modal-overlay hidden" id="bom-modal" onclick="closeBOMOnOverlay(event)">
   <div class="modal">
     <div class="modal-header">
-      <h2>📊 Bill of Materials</h2>
-      <button class="btn btn-secondary btn-sm" onclick="closeBOM()">✕ Close</button>
+      <h2>Bill of Materials</h2>
+      <button class="btn btn-secondary btn-sm" onclick="closeBOM()"><i data-lucide="x"></i><span>Close</span></button>
     </div>
     <div class="modal-body" id="bom-body"></div>
   </div>
@@ -342,124 +314,124 @@
 <input type="file" id="file-import" accept=".yaml,.yml,.json" style="display:none" onchange="handleImport(event)" />
 
 <script>
-// ── State ─────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────
+const DOOR_LOCK_TYPES = ['Mag Lock','Electric Strike','Electric Mortise','Fail Safe','Fail Secure','Turnstile','Mantrap','Gate','Electrified Lockset','Other'];
+const READER_TYPES    = ['HID iCLASS','HID Multiclass','HID Signo','OSDP','Wiegand','Aperio','NFC/BLE','Keypad + Reader','Keypad Only','Biometric','Other'];
+const DOOR_TYPES      = ['Entry','Exit','Interior','Stairwell','Elevator Lobby','Server Room','Loading Dock','Garage','Vestibule','Other'];
+const REX_TYPES       = ['Motion','Push Button','Crash Bar','None'];
+const DOOR_STATUSES   = ['Designed','Programmed','Tested','Commissioned'];
+const SUP_OPTIONS     = ['Standard','Supervised'];
+const STATUS_CLASS    = { Designed:'designed', Programmed:'programmed', Tested:'tested', Commissioned:'commissioned' };
+
+// ── Inline SVG icons (used in JS-rendered templates) ──────────────────────
+const IC = {
+  server: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>`,
+  copy:   `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
+  x:      `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
+  plus:   `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
+  db:     `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>`,
+  shield: `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+};
+
 let panels = [];
 let activeTab = 'yaml';
 
-const DOOR_LOCK_TYPES  = ['Mag Lock','Electric Strike','Electric Mortise','Fail Safe','Fail Secure','Turnstile','Mantrap','Gate','Electrified Lockset','Other'];
-const READER_TYPES     = ['HID iCLASS','HID Multiclass','HID Signo','OSDP','Wiegand','Aperio','NFC/BLE','Keypad + Reader','Keypad Only','Biometric','Other'];
-const DOOR_TYPES       = ['Entry','Exit','Interior','Stairwell','Elevator Lobby','Server Room','Loading Dock','Garage','Vestibule','Other'];
-const REX_TYPES        = ['Motion','Push Button','Crash Bar','None'];
-const DOOR_STATUSES    = ['Designed','Programmed','Tested','Commissioned'];
-const STATUS_CLASS     = { Designed:'designed', Programmed:'programmed', Tested:'tested', Commissioned:'commissioned' };
-
-function genId() { return 'id_' + Math.random().toString(36).substr(2,9); }
-function today() { return new Date().toISOString().split('T')[0]; }
+function genId()  { return 'id_' + Math.random().toString(36).substr(2,9); }
+function today()  { return new Date().toISOString().split('T')[0]; }
 
 // ── Panel CRUD ────────────────────────────────────────────────────────────
 function addPanel() {
-  const p = { id:genId(), name:'Panel '+(panels.length+1), location:'', model:'', ip:'', network:'', notes:'', doors:[] };
+  const p = { id:genId(), name:'Panel '+(panels.length+1), location:'', model:'', ip:'', mask:'', gateway:'', dns1:'', dns2:'', network:'', notes:'', doors:[] };
   panels.push(p);
   renderAll();
-  setTimeout(() => { const el = document.getElementById('pname_'+p.id); if (el){el.focus();el.select();} }, 50);
+  setTimeout(() => { const el = document.getElementById('pname_'+p.id); if(el){el.focus();el.select();} }, 50);
 }
-
 function removePanel(pid) {
   if (!confirm('Remove this panel and all its doors?')) return;
   panels = panels.filter(p => p.id !== pid);
   renderAll();
 }
-
 function addDoor(pid) {
   const panel = panels.find(p => p.id === pid);
   if (!panel) return;
-  panel.doors.push({ id:genId(), name:'', location:'', doorType:'', lockType:'', readerIn:'', readerInAddr:'', readerOut:'', readerOutAddr:'', rex:'Motion', ds:true, rte:false, status:'', notes:'' });
+  panel.doors.push({ id:genId(), name:'', location:'', doorType:'', lockType:'', readerIn:'', readerInAddr:'', rex:'Motion', dps:'Standard', rte:'', status:'', notes:'' });
   renderAll();
 }
-
 function duplicateDoor(pid, did) {
   const panel = panels.find(p => p.id === pid);
   if (!panel) return;
   const src = panel.doors.find(d => d.id === did);
   if (!src) return;
   const clone = { ...src, id:genId(), name: src.name ? src.name+' (copy)' : '', status:'' };
-  const idx = panel.doors.indexOf(src);
-  panel.doors.splice(idx + 1, 0, clone);
+  panel.doors.splice(panel.doors.indexOf(src) + 1, 0, clone);
   renderAll();
 }
-
 function removeDoor(pid, did) {
   const panel = panels.find(p => p.id === pid);
   if (!panel) return;
   panel.doors = panel.doors.filter(d => d.id !== did);
   renderAll();
 }
+function duplicatePanel(pid) {
+  const src = panels.find(p => p.id === pid);
+  if (!src) return;
+  const clone = {
+    ...src,
+    id: genId(),
+    name: src.name ? src.name + ' (copy)' : 'Panel (copy)',
+    doors: src.doors.map(d => ({ ...d, id: genId(), status: '' }))
+  };
+  panels.splice(panels.indexOf(src) + 1, 0, clone);
+  renderAll();
+}
 
 // ── Render ────────────────────────────────────────────────────────────────
-function renderAll() {
-  renderPanels();
-  renderOutput();
-  syncURL();
-}
+function renderAll() { renderPanels(); renderOutput(); syncURL(); if (window.lucide) lucide.createIcons(); }
 
 function panelProgressChips(doors) {
   if (!doors.length) return '';
   const counts = {};
   doors.forEach(d => { if (d.status) counts[d.status] = (counts[d.status]||0)+1; });
-  return Object.entries(counts).map(([s,n]) =>
-    `<span class="prog-chip ${STATUS_CLASS[s]||''}">${n} ${s}</span>`
-  ).join('');
+  return Object.entries(counts).map(([s,n]) => `<span class="prog-chip ${STATUS_CLASS[s]||''}">${n} ${s}</span>`).join('');
 }
-
 function statusBarHTML(doors) {
   if (!doors.length) return '';
-  const total = doors.length;
   const counts = { Designed:0, Programmed:0, Tested:0, Commissioned:0 };
-  doors.forEach(d => { if (d.status && counts[d.status] !== undefined) counts[d.status]++; });
-  const segs = Object.entries(counts).filter(([,n])=>n>0).map(([s,n])=>
-    `<div class="status-bar-seg sb-${s.toLowerCase()}" style="flex:${n};" title="${n} ${s}"></div>`
-  ).join('');
+  doors.forEach(d => { if (d.status && counts[d.status]!==undefined) counts[d.status]++; });
+  const total = doors.length;
+  const segs = Object.entries(counts).filter(([,n])=>n>0).map(([s,n]) =>
+    `<div class="status-bar-seg sb-${s.toLowerCase()}" style="flex:${n};" title="${n} ${s}"></div>`).join('');
   const unset = total - Object.values(counts).reduce((a,b)=>a+b,0);
-  const unsetSeg = unset > 0 ? `<div class="status-bar-seg" style="flex:${unset};background:var(--border);" title="${unset} unset"></div>` : '';
-  return `<div class="status-bar-wrap">${segs}${unsetSeg}</div>`;
+  return `<div class="status-bar-wrap">${segs}${unset>0?`<div class="status-bar-seg" style="flex:${unset};background:var(--border);" title="${unset} unset"></div>`:''}</div>`;
 }
 
 function renderPanels() {
   const container = document.getElementById('panels-container');
   if (!panels.length) {
-    container.innerHTML = `<div class="empty-state" style="margin-bottom:24px;"><div class="big">🗄️</div><div>No panels yet — click <strong>+ Add Controller / Panel</strong> to start</div></div>`;
+    container.innerHTML = `<div class="empty-state" style="margin-bottom:20px;"><div class="big" style="color:var(--muted)">${IC.db}</div><div>No panels yet — click <strong>+ Add Controller / Panel</strong> to start</div></div>`;
     return;
   }
   container.innerHTML = panels.map(p => `
     <div class="panel-card" id="panel_${p.id}">
       <div class="panel-card-header">
-        <span style="color:var(--accent);font-size:16px;flex-shrink:0;">🗄️</span>
-        <input class="panel-name-input" id="pname_${p.id}" value="${esc(p.name)}"
-          placeholder="Panel / Controller Name"
-          oninput="updatePanel('${p.id}','name',this.value)" />
+        <span style="color:var(--accent);flex-shrink:0;display:flex;">${IC.server}</span>
+        <input class="panel-name-input" id="pname_${p.id}" value="${esc(p.name)}" placeholder="Panel / Controller Name" oninput="updatePanel('${p.id}','name',this.value)" />
         <div class="panel-progress">${panelProgressChips(p.doors)}</div>
         <span class="badge" style="flex-shrink:0;">${p.doors.length} door${p.doors.length!==1?'s':''}</span>
-        <button class="btn btn-danger btn-sm" onclick="removePanel('${p.id}')">✕</button>
+        <button class="btn btn-icon btn-sm" title="Duplicate panel" onclick="duplicatePanel('${p.id}')">${IC.copy}</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="removePanel('${p.id}')">${IC.x}</button>
       </div>
       ${statusBarHTML(p.doors)}
       <div class="panel-card-body">
         <div class="panel-meta">
-          <div class="meta-field">
-            <label>Physical Location</label>
-            <input type="text" value="${esc(p.location)}" placeholder="e.g. IDF Room 2A" oninput="updatePanel('${p.id}','location',this.value)" />
-          </div>
-          <div class="meta-field">
-            <label>Model / Type</label>
-            <input type="text" value="${esc(p.model)}" placeholder="e.g. Mercury EP-1502" oninput="updatePanel('${p.id}','model',this.value)" />
-          </div>
-          <div class="meta-field">
-            <label>IP Address</label>
-            <input type="text" value="${esc(p.ip)}" placeholder="192.168.x.x" oninput="updatePanel('${p.id}','ip',this.value)" />
-          </div>
-          <div class="meta-field">
-            <label>Network / VLAN</label>
-            <input type="text" value="${esc(p.network)}" placeholder="e.g. ACS-VLAN 10" oninput="updatePanel('${p.id}','network',this.value)" />
-          </div>
+          <div class="meta-field"><label>Physical Location</label><input type="text" value="${esc(p.location)}" placeholder="e.g. IDF Room 2A" oninput="updatePanel('${p.id}','location',this.value)" /></div>
+          <div class="meta-field"><label>Model / Type</label><input type="text" value="${esc(p.model)}" placeholder="e.g. Mercury EP-1502" oninput="updatePanel('${p.id}','model',this.value)" /></div>
+          <div class="meta-field"><label>IP Address</label><input type="text" value="${esc(p.ip)}" placeholder="192.168.x.x" oninput="updatePanel('${p.id}','ip',this.value)" /></div>
+          <div class="meta-field"><label>Subnet Mask</label><input type="text" value="${esc(p.mask)}" placeholder="255.255.255.0" oninput="updatePanel('${p.id}','mask',this.value)" /></div>
+          <div class="meta-field"><label>Gateway</label><input type="text" value="${esc(p.gateway)}" placeholder="192.168.x.1" oninput="updatePanel('${p.id}','gateway',this.value)" /></div>
+          <div class="meta-field"><label>Network / VLAN</label><input type="text" value="${esc(p.network)}" placeholder="e.g. ACS-VLAN 10" oninput="updatePanel('${p.id}','network',this.value)" /></div>
+          <div class="meta-field"><label>DNS Server 1</label><input type="text" value="${esc(p.dns1)}" placeholder="e.g. 8.8.8.8" oninput="updatePanel('${p.id}','dns1',this.value)" /></div>
+          <div class="meta-field"><label>DNS Server 2</label><input type="text" value="${esc(p.dns2)}" placeholder="e.g. 8.8.4.4" oninput="updatePanel('${p.id}','dns2',this.value)" /></div>
         </div>
         <div class="meta-field" style="margin-bottom:12px;">
           <label>Notes</label>
@@ -468,60 +440,46 @@ function renderPanels() {
         <div class="doors-table-wrap">
           <table>
             <thead><tr>
-              <th>#</th>
-              <th>Status</th>
-              <th>Door Name</th>
-              <th>Location / Zone</th>
-              <th>Type</th>
-              <th>Lock</th>
-              <th>Reader IN</th>
-              <th>Addr IN</th>
-              <th>Reader OUT</th>
-              <th>Addr OUT</th>
-              <th>REX</th>
-              <th title="Door Contact Sensor">DS</th>
-              <th title="RTE Relay">RTE</th>
-              <th>Notes</th>
-              <th></th>
+              <th>#</th><th>Status</th><th>Door Name</th><th>Zone / Floor</th>
+              <th>Type</th><th>Lock</th><th>Reader IN</th><th>Reader Addr</th>
+              <th>REX</th><th title="Door Position Switch">DPS</th><th>RTE</th><th>Notes</th><th></th>
             </tr></thead>
             <tbody>${p.doors.map((d,i) => renderDoorRow(p.id,d,i)).join('')}</tbody>
-            <tfoot><tr class="add-row"><td colspan="15">
-              <button class="btn btn-secondary btn-sm" onclick="addDoor('${p.id}')">＋ Add Door</button>
+            <tfoot><tr class="add-row"><td colspan="13">
+              <button class="btn btn-secondary btn-sm" onclick="addDoor('${p.id}')">${IC.plus}<span style="margin-left:5px;">Add Door</span></button>
             </td></tr></tfoot>
           </table>
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function renderDoorRow(pid, d, i) {
   const sel = (arr, val) => arr.map(t => `<option ${val===t?'selected':''}>${t}</option>`).join('');
   const statusClass = STATUS_CLASS[d.status] ? `status-${STATUS_CLASS[d.status]}` : '';
   const statusOpts = DOOR_STATUSES.map(s => `<option ${d.status===s?'selected':''}>${s}</option>`).join('');
+  const dpsClass  = d.dps  === 'Supervised' ? 'sup-supervised' : '';
+  const rteClass  = d.rte  === 'Supervised' ? 'sup-supervised' : '';
 
   return `<tr id="door_${d.id}">
-    <td style="text-align:center;color:var(--muted);font-weight:700;width:28px;">${i+1}</td>
-    <td>
-      <select class="status-select ${statusClass}" onchange="updateDoor('${pid}','${d.id}','status',this.value);this.className='status-select'+(this.value?' status-'+this.value.toLowerCase():'')">
-        <option value="">—</option>${statusOpts}
-      </select>
-    </td>
+    <td style="text-align:center;color:var(--muted);font-weight:700;width:26px;">${i+1}</td>
+    <td><select class="status-select ${statusClass}" onchange="updateDoor('${pid}','${d.id}','status',this.value);this.className='status-select'+(this.value?' status-'+this.value.toLowerCase():'')">
+      <option value="">—</option>${statusOpts}</select></td>
     <td><input type="text" value="${esc(d.name)}" placeholder="Door name" oninput="updateDoor('${pid}','${d.id}','name',this.value)" style="min-width:110px;" /></td>
-    <td><input type="text" value="${esc(d.location)}" placeholder="Location" oninput="updateDoor('${pid}','${d.id}','location',this.value)" style="min-width:90px;" /></td>
+    <td><input type="text" value="${esc(d.location)}" placeholder="Zone / floor" oninput="updateDoor('${pid}','${d.id}','location',this.value)" style="min-width:80px;" /></td>
     <td><select onchange="updateDoor('${pid}','${d.id}','doorType',this.value)"><option value="">—</option>${sel(DOOR_TYPES,d.doorType)}</select></td>
     <td><select onchange="updateDoor('${pid}','${d.id}','lockType',this.value)"><option value="">—</option>${sel(DOOR_LOCK_TYPES,d.lockType)}</select></td>
-    <td><select onchange="updateDoor('${pid}','${d.id}','readerIn',this.value)" style="min-width:105px;"><option value="">—</option>${sel(READER_TYPES,d.readerIn)}</select></td>
-    <td><input type="text" value="${esc(d.readerInAddr)}" placeholder="0-0" oninput="updateDoor('${pid}','${d.id}','readerInAddr',this.value)" style="min-width:50px;" /></td>
-    <td><select onchange="updateDoor('${pid}','${d.id}','readerOut',this.value)" style="min-width:105px;"><option value="">—</option>${sel(READER_TYPES,d.readerOut)}</select></td>
-    <td><input type="text" value="${esc(d.readerOutAddr)}" placeholder="0-1" oninput="updateDoor('${pid}','${d.id}','readerOutAddr',this.value)" style="min-width:50px;" /></td>
+    <td><select onchange="updateDoor('${pid}','${d.id}','readerIn',this.value)" style="min-width:100px;"><option value="">—</option>${sel(READER_TYPES,d.readerIn)}</select></td>
+    <td><input type="text" value="${esc(d.readerInAddr)}" placeholder="Port/Addr" oninput="updateDoor('${pid}','${d.id}','readerInAddr',this.value)" style="min-width:60px;" /></td>
     <td><select onchange="updateDoor('${pid}','${d.id}','rex',this.value)"><option value="">—</option>${sel(REX_TYPES,d.rex)}</select></td>
-    <td style="text-align:center;"><input type="checkbox" ${d.ds?'checked':''} onchange="updateDoor('${pid}','${d.id}','ds',this.checked)" title="Door Contact Sensor" /></td>
-    <td style="text-align:center;"><input type="checkbox" ${d.rte?'checked':''} onchange="updateDoor('${pid}','${d.id}','rte',this.checked)" title="RTE Relay" /></td>
-    <td><input type="text" value="${esc(d.notes)}" placeholder="Notes" oninput="updateDoor('${pid}','${d.id}','notes',this.value)" style="min-width:90px;" /></td>
+    <td><select class="sup-select ${dpsClass}" onchange="updateDoor('${pid}','${d.id}','dps',this.value);this.className='sup-select'+(this.value==='Supervised'?' sup-supervised':'')">
+      <option value="">—</option>${sel(SUP_OPTIONS,d.dps)}</select></td>
+    <td><select class="sup-select ${rteClass}" onchange="updateDoor('${pid}','${d.id}','rte',this.value);this.className='sup-select'+(this.value==='Supervised'?' sup-supervised':'')">
+      <option value="">—</option>${sel(SUP_OPTIONS,d.rte)}</select></td>
+    <td><input type="text" value="${esc(d.notes)}" placeholder="Notes" oninput="updateDoor('${pid}','${d.id}','notes',this.value)" style="min-width:80px;" /></td>
     <td style="white-space:nowrap;">
-      <button class="btn btn-icon btn-sm" onclick="duplicateDoor('${pid}','${d.id}')" title="Duplicate door" style="margin-right:3px;">⧉</button>
-      <button class="btn btn-danger btn-sm btn-icon" onclick="removeDoor('${pid}','${d.id}')" title="Remove door">✕</button>
+      <button class="btn btn-icon btn-sm" onclick="duplicateDoor('${pid}','${d.id}')" title="Duplicate" style="margin-right:3px;">${IC.copy}</button>
+      <button class="btn btn-danger btn-sm btn-icon" onclick="removeDoor('${pid}','${d.id}')" title="Remove">${IC.x}</button>
     </td>
   </tr>`;
 }
@@ -532,13 +490,11 @@ function updatePanel(pid, field, value) {
   if (p) p[field] = value;
   renderOutput(); syncURL();
 }
-
 function updateDoor(pid, did, field, value) {
   const p = panels.find(p => p.id === pid);
   if (!p) return;
   const d = p.doors.find(d => d.id === did);
   if (d) d[field] = value;
-  // Re-render just the panel header progress (no full re-render on every keystroke)
   const chips = document.querySelector(`#panel_${pid} .panel-progress`);
   if (chips) chips.innerHTML = panelProgressChips(p.doors);
   const bar = document.querySelector(`#panel_${pid} .status-bar-wrap`);
@@ -549,12 +505,14 @@ function updateDoor(pid, did, field, value) {
 // ── Serialization ─────────────────────────────────────────────────────────
 function getProjectFields() {
   return {
-    job_number: document.getElementById('projJob').value || '',
-    name: document.getElementById('projName').value || 'Untitled Project',
-    site: document.getElementById('projSite').value || '',
-    platform: document.getElementById('projPlatform').value || '',
-    technician: document.getElementById('projTech').value || '',
-    date: document.getElementById('projDate').value || today(),
+    job_number:  document.getElementById('projJob').value     || '',
+    name:        document.getElementById('projName').value    || 'Untitled Project',
+    site:        document.getElementById('projSite').value    || '',
+    platform:    document.getElementById('projPlatform').value|| '',
+    technician:  document.getElementById('projTech').value    || '',
+    contact:     document.getElementById('projContact').value || '',
+    phone:       document.getElementById('projPhone').value   || '',
+    date:        document.getElementById('projDate').value    || today(),
   };
 }
 
@@ -562,18 +520,23 @@ function buildData() {
   return {
     project: { ...getProjectFields(), generated: new Date().toISOString() },
     panels: panels.map(p => ({
-      name: p.name, location: p.location, model: p.model, ip: p.ip, network: p.network, notes: p.notes,
+      name: p.name, location: p.location, model: p.model,
+      network: { ip: p.ip, mask: p.mask, gateway: p.gateway, dns1: p.dns1, dns2: p.dns2, vlan: p.network },
+      notes: p.notes,
       doors: p.doors.map((d, i) => {
         const obj = {
-          number: i+1, name: d.name, location: d.location,
+          name: d.name,           // name first so it shows when collapsed
+          number: i + 1,
+          location: d.location,
           status: d.status || null,
           door_type: d.doorType, lock_type: d.lockType,
-          reader_in:  d.readerIn  ? { type: d.readerIn,  address: d.readerInAddr  } : null,
-          reader_out: d.readerOut ? { type: d.readerOut, address: d.readerOutAddr } : null,
-          rex: d.rex, door_sensor: d.ds, rte_relay: d.rte, notes: d.notes
+          reader_in: d.readerIn ? { type: d.readerIn, address: d.readerInAddr } : null,
+          rex: d.rex,
+          door_position_switch: d.dps  || null,
+          rte_relay:            d.rte  || null,
+          notes: d.notes
         };
-        if (!obj.reader_in)  delete obj.reader_in;
-        if (!obj.reader_out) delete obj.reader_out;
+        if (!obj.reader_in) delete obj.reader_in;
         Object.keys(obj).forEach(k => { if (obj[k]===''||obj[k]===null) delete obj[k]; });
         return obj;
       })
@@ -599,9 +562,9 @@ function toYAML(data) {
     let out = '';
     for (const [k, v] of Object.entries(obj)) {
       if (v === undefined || v === null || v === '') continue;
-      if (Array.isArray(v))             { out += indent(level)+k+':\n'; out += renderArr(v, level+1); }
-      else if (typeof v === 'object')   { out += indent(level)+k+':\n'; out += renderObj(v, level+1); }
-      else                              { out += indent(level)+k+': '+scalar(v)+'\n'; }
+      if (Array.isArray(v))           { out += indent(level)+k+':\n'; out += renderArr(v, level+1); }
+      else if (typeof v === 'object') { out += indent(level)+k+':\n'; out += renderObj(v, level+1); }
+      else                            { out += indent(level)+k+': '+scalar(v)+'\n'; }
     }
     return out;
   }
@@ -613,14 +576,14 @@ function toYAML(data) {
         const entries = Object.entries(item).filter(([,v]) => v!==undefined && v!==null && v!=='');
         if (!entries.length) { out += indent(level)+'- {}\n'; continue; }
         const [fk, fv] = entries[0];
-        if (Array.isArray(fv))           { out += indent(level)+'- '+fk+':\n'; out += renderArr(fv, level+2); }
+        if (Array.isArray(fv))                      { out += indent(level)+'- '+fk+':\n'; out += renderArr(fv, level+2); }
         else if (typeof fv==='object' && fv!==null) { out += indent(level)+'- '+fk+':\n'; out += renderObj(fv, level+2); }
-        else                             { out += indent(level)+'- '+fk+': '+scalar(fv)+'\n'; }
+        else                                        { out += indent(level)+'- '+fk+': '+scalar(fv)+'\n'; }
         for (let i=1; i<entries.length; i++) {
           const [k,v] = entries[i];
-          if (Array.isArray(v))          { out += indent(level+1)+k+':\n'; out += renderArr(v, level+2); }
+          if (Array.isArray(v))                     { out += indent(level+1)+k+':\n'; out += renderArr(v, level+2); }
           else if (typeof v==='object' && v!==null) { out += indent(level+1)+k+':\n'; out += renderObj(v, level+2); }
-          else                           { out += indent(level+1)+k+': '+scalar(v)+'\n'; }
+          else                                      { out += indent(level+1)+k+': '+scalar(v)+'\n'; }
         }
       } else { out += indent(level)+'- '+scalar(item)+'\n'; }
     }
@@ -633,14 +596,13 @@ function toYAML(data) {
 function renderOutput() {
   const body = document.getElementById('output-body');
   if (!panels.length) {
-    body.innerHTML = `<div class="empty-state"><div class="big">🔐</div><div>Add a panel and some doors to see output</div></div>`;
+    body.innerHTML = `<div class="empty-state"><div class="big" style="color:var(--muted)">${IC.shield}</div><div>Add a panel and some doors to see output</div></div>`;
     return;
   }
   const data = buildData();
   const content = activeTab==='yaml' ? toYAML(data) : JSON.stringify(data, null, 2);
   body.innerHTML = `<pre id="output-pre">${escHtml(content)}</pre>`;
 }
-
 function switchTab(tab) {
   activeTab = tab;
   document.getElementById('tab-yaml').classList.toggle('active', tab==='yaml');
@@ -648,23 +610,76 @@ function switchTab(tab) {
   renderOutput();
 }
 
-// ── Export / Import ───────────────────────────────────────────────────────
-function exportYAML() {
-  const name = (document.getElementById('projName').value||'door-program').replace(/[^a-z0-9]/gi,'_').toLowerCase();
-  download(toYAML(buildData()), name+'_doors.yaml', 'text/yaml');
-  toast('YAML exported!');
-}
-function exportJSON() {
-  const name = (document.getElementById('projName').value||'door-program').replace(/[^a-z0-9]/gi,'_').toLowerCase();
-  download(JSON.stringify(buildData(),null,2), name+'_doors.json', 'application/json');
-  toast('JSON exported!');
+// ── Export ────────────────────────────────────────────────────────────────
+function safeName() {
+  return (document.getElementById('projJob').value || document.getElementById('projName').value || 'readerpro').replace(/[^a-z0-9]/gi,'_').toLowerCase();
 }
 function download(content, filename, mime) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([content],{type:mime}));
   a.download = filename; a.click();
 }
+function exportYAML()  { download(toYAML(buildData()), safeName()+'_doors.yaml', 'text/yaml'); toast('YAML exported!'); }
+function exportJSON()  { download(JSON.stringify(buildData(),null,2), safeName()+'_doors.json', 'application/json'); toast('JSON exported!'); }
 
+// ── Excel Export ──────────────────────────────────────────────────────────
+function exportExcel() {
+  if (!panels.length) { toast('Add at least one panel first'); return; }
+  const wb = XLSX.utils.book_new();
+  const proj = getProjectFields();
+
+  // Sheet 1: Project Info
+  const projRows = [
+    ['ReaderPro.io — Door Programming Schedule'],
+    [],
+    ['Job #',         proj.job_number  || ''],
+    ['Project Name',  proj.name        || ''],
+    ['Site',          proj.site        || ''],
+    ['Platform',      proj.platform    || ''],
+    ['Technician',    proj.technician  || ''],
+    ['Contact',       proj.contact     || ''],
+    ['Phone',         proj.phone       || ''],
+    ['Date',          proj.date        || ''],
+    ['Generated',     new Date().toLocaleString()],
+  ];
+  const wsProj = XLSX.utils.aoa_to_sheet(projRows);
+  wsProj['!cols'] = [{ wch: 18 }, { wch: 40 }];
+  XLSX.utils.book_append_sheet(wb, wsProj, 'Project Info');
+
+  // One sheet per panel
+  const HEADERS = ['#','Status','Door Name','Zone / Floor','Door Type','Lock Type','Reader IN','Reader Addr','REX','DPS','RTE','Notes'];
+  panels.forEach((p, pi) => {
+    const rows = [
+      [`Panel: ${p.name || 'Panel '+(pi+1)}`],
+      p.ip ? [`IP: ${p.ip}  |  Mask: ${p.mask||''}  |  GW: ${p.gateway||''}  |  VLAN: ${p.network||''}`] : [],
+      [],
+      HEADERS,
+      ...p.doors.map((d, i) => [
+        i+1, d.status||'', d.name||'', d.location||'', d.doorType||'', d.lockType||'',
+        d.readerIn||'', d.readerInAddr||'', d.rex||'', d.dps||'', d.rte||'', d.notes||''
+      ])
+    ].filter(r => r.length > 0);
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    // Column widths
+    ws['!cols'] = [6,14,24,16,14,18,18,12,12,12,12,24].map(w=>({wch:w}));
+    // Bold the header row (row index = rows where HEADERS appears)
+    const headerRowIdx = rows.findIndex(r => r[0]==='#');
+    if (headerRowIdx >= 0) {
+      HEADERS.forEach((_, ci) => {
+        const cellRef = XLSX.utils.encode_cell({ r: headerRowIdx, c: ci });
+        if (ws[cellRef]) ws[cellRef].s = { font: { bold: true }, fill: { fgColor: { rgb: 'E2E8F0' } } };
+      });
+    }
+    const sheetName = (p.name || 'Panel '+(pi+1)).replace(/[\\/*?[\]:]/g,'').slice(0,31);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName || `Panel ${pi+1}`);
+  });
+
+  XLSX.writeFile(wb, safeName()+'_doors.xlsx');
+  toast('📊 Excel exported!');
+}
+
+// ── Import ────────────────────────────────────────────────────────────────
 function importFile() { document.getElementById('file-import').click(); }
 function handleImport(e) {
   const file = e.target.files[0]; if (!file) return;
@@ -672,7 +687,7 @@ function handleImport(e) {
   reader.onload = ev => {
     try {
       const data = file.name.endsWith('.json') ? JSON.parse(ev.target.result) : jsyaml.load(ev.target.result);
-      loadData(data); toast('Imported successfully!');
+      loadData(data); toast('Imported!');
     } catch(err) { alert('Could not parse file: '+err.message); }
   };
   reader.readAsText(file);
@@ -681,77 +696,73 @@ function handleImport(e) {
 
 function loadData(data) {
   const proj = data.project || {};
-  document.getElementById('projJob').value      = proj.job_number || '';
-  document.getElementById('projName').value     = proj.name       || '';
-  document.getElementById('projSite').value     = proj.site       || '';
-  document.getElementById('projTech').value     = proj.technician || proj.engineer || '';
-  document.getElementById('projDate').value     = proj.date       || '';
+  document.getElementById('projJob').value     = proj.job_number || '';
+  document.getElementById('projName').value    = proj.name       || '';
+  document.getElementById('projSite').value    = proj.site       || '';
+  document.getElementById('projTech').value    = proj.technician || proj.engineer || '';
+  document.getElementById('projContact').value = proj.contact    || '';
+  document.getElementById('projPhone').value   = proj.phone      || '';
+  document.getElementById('projDate').value    = proj.date       || '';
   const sel = document.getElementById('projPlatform');
   if (proj.platform) { for (let o of sel.options) { if (o.value===proj.platform){sel.value=proj.platform;break;} } }
 
   panels = (data.panels||[]).map(p => ({
     id: genId(), name: p.name||'', location: p.location||'', model: p.model||'',
-    ip: p.ip||'', network: p.network||'', notes: p.notes||'',
+    ip:      (p.network?.ip      || p.ip      || ''),
+    mask:    (p.network?.mask    || p.mask    || ''),
+    gateway: (p.network?.gateway || p.gateway || ''),
+    dns1:    (p.network?.dns1    || p.dns1    || ''),
+    dns2:    (p.network?.dns2    || p.dns2    || ''),
+    network: (p.network?.vlan    || (typeof p.network==='string' ? p.network : '') || ''),
+    notes: p.notes||'',
     doors: (p.doors||[]).map(d => ({
       id: genId(), name: d.name||'', location: d.location||'',
       doorType: d.door_type||'', lockType: d.lock_type||'',
-      readerIn:     d.reader_in  ? (d.reader_in.type    ||'') : '',
-      readerInAddr: d.reader_in  ? (d.reader_in.address ||'') : '',
-      readerOut:     d.reader_out ? (d.reader_out.type   ||'') : '',
-      readerOutAddr: d.reader_out ? (d.reader_out.address||'') : '',
-      rex: d.rex||'Motion',
-      ds:  d.door_sensor!==undefined ? d.door_sensor : true,
-      rte: d.rte_relay||false,
-      status: d.status||'',
-      notes: d.notes||''
+      readerIn:     d.reader_in ? (d.reader_in.type    ||'') : '',
+      readerInAddr: d.reader_in ? (d.reader_in.address ||'') : '',
+      rex:    d.rex    || 'Motion',
+      dps:    d.door_position_switch || (d.door_sensor ? 'Standard' : '') || '',
+      rte:    d.rte_relay || '',
+      status: d.status || '',
+      notes:  d.notes  || ''
     }))
   }));
   renderAll();
 }
 
 // ── Share via URL ─────────────────────────────────────────────────────────
-function getShareState() {
-  return {
-    project: getProjectFields(),
-    panels: panels
-  };
-}
-
 function syncURL() {
   if (!panels.length) { history.replaceState(null,'',window.location.pathname); return; }
   try {
-    const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(getShareState()));
+    const compressed = LZString.compressToEncodedURIComponent(JSON.stringify({ project: getProjectFields(), panels }));
     history.replaceState(null, '', '#' + compressed);
   } catch(e) {}
 }
-
 function shareURL() {
   try {
-    const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(getShareState()));
+    const compressed = LZString.compressToEncodedURIComponent(JSON.stringify({ project: getProjectFields(), panels }));
     const url = window.location.origin + window.location.pathname + '#' + compressed;
-    navigator.clipboard.writeText(url).then(() => toast('🔗 Link copied to clipboard!'));
+    navigator.clipboard.writeText(url).then(() => toast('🔗 Link copied!'));
   } catch(e) { toast('Could not copy link'); }
 }
-
 function loadFromURL() {
-  const hash = window.location.hash.slice(1);
-  if (!hash) return;
+  const hash = window.location.hash.slice(1); if (!hash) return;
   try {
-    const json = LZString.decompressFromEncodedURIComponent(hash);
-    if (!json) return;
+    const json = LZString.decompressFromEncodedURIComponent(hash); if (!json) return;
     const state = JSON.parse(json);
-    // state has project + raw panels (internal format)
     const proj = state.project || {};
-    document.getElementById('projName').value = proj.name||'';
-    document.getElementById('projSite').value = proj.site||'';
-    document.getElementById('projTech').value = proj.technician||'';
-    document.getElementById('projDate').value = proj.date||'';
+    document.getElementById('projJob').value     = proj.job_number || '';
+    document.getElementById('projName').value    = proj.name       || '';
+    document.getElementById('projSite').value    = proj.site       || '';
+    document.getElementById('projTech').value    = proj.technician || '';
+    document.getElementById('projContact').value = proj.contact    || '';
+    document.getElementById('projPhone').value   = proj.phone      || '';
+    document.getElementById('projDate').value    = proj.date       || '';
     const sel = document.getElementById('projPlatform');
     if (proj.platform) { for (let o of sel.options) { if (o.value===proj.platform){sel.value=proj.platform;break;} } }
     panels = (state.panels||[]).map(p => ({ ...p, id: p.id||genId(), doors: (p.doors||[]).map(d=>({...d, id:d.id||genId()})) }));
-    renderAll();
-    toast('Project loaded from link!');
-  } catch(e) { console.warn('Could not load from URL hash:', e); }
+    renderAll(); toast('Project loaded from link!');
+  } catch(e) { console.warn('Could not load from URL:', e); }
 }
 
 // ── BOM ───────────────────────────────────────────────────────────────────
@@ -760,290 +771,194 @@ function tally(items) {
   items.forEach(v => { if (v) map[v] = (map[v]||0)+1; });
   return Object.entries(map).sort((a,b)=>b[1]-a[1]);
 }
-
 function showBOM() {
   const allDoors = panels.flatMap(p => p.doors);
   const total = allDoors.length;
-  const totalPanels = panels.length;
-
-  const readersIn  = tally(allDoors.map(d => d.readerIn).filter(Boolean));
-  const readersOut = tally(allDoors.map(d => d.readerOut).filter(Boolean));
-  const locks      = tally(allDoors.map(d => d.lockType).filter(Boolean));
-  const types      = tally(allDoors.map(d => d.doorType).filter(Boolean));
-  const statuses   = tally(allDoors.map(d => d.status).filter(Boolean));
-  const rexTypes   = tally(allDoors.map(d => d.rex).filter(Boolean));
-
-  const dsCount  = allDoors.filter(d=>d.ds).length;
-  const rteCount = allDoors.filter(d=>d.rte).length;
+  const readers   = tally(allDoors.map(d=>d.readerIn).filter(Boolean));
+  const locks     = tally(allDoors.map(d=>d.lockType).filter(Boolean));
+  const types     = tally(allDoors.map(d=>d.doorType).filter(Boolean));
+  const rexTypes  = tally(allDoors.map(d=>d.rex).filter(Boolean));
+  const statuses  = tally(allDoors.map(d=>d.status).filter(Boolean));
+  const dpsTypes  = tally(allDoors.map(d=>d.dps).filter(Boolean));
+  const rteTypes  = tally(allDoors.map(d=>d.rte).filter(Boolean));
 
   function bomTable(rows, maxVal) {
     if (!rows.length) return '<p style="color:var(--muted);font-size:12px;">None specified</p>';
     return `<table class="bom-table">${rows.map(([label,count])=>`
-      <tr>
-        <td>${label}</td>
-        <td><div class="bom-bar-wrap"><div class="bom-bar"><div class="bom-bar-fill" style="width:${Math.round(count/maxVal*100)}%"></div></div></div></td>
-        <td>${count}</td>
-      </tr>`).join('')}</table>`;
+      <tr><td>${label}</td><td><div class="bom-bar-wrap"><div class="bom-bar"><div class="bom-bar-fill" style="width:${Math.round(count/maxVal*100)}%"></div></div></div></td><td>${count}</td></tr>`).join('')}</table>`;
   }
-
-  const statusColors = { Designed:'#7eb4ff', Programmed:'#fbbf24', Tested:'#fb923c', Commissioned:'#4ade80' };
+  const SC = { Designed:'#7eb4ff', Programmed:'#fbbf24', Tested:'#fb923c', Commissioned:'#4ade80' };
   function statusTable(rows) {
-    if (!rows.length) return '<p style="color:var(--muted);font-size:12px;">No status set on any door</p>';
-    return `<table class="bom-table">${rows.map(([label,count])=>`
-      <tr><td style="color:${statusColors[label]||'inherit'};font-weight:700;">${label}</td><td></td><td>${count}</td></tr>`).join('')}</table>`;
+    if (!rows.length) return '<p style="color:var(--muted);font-size:12px;">No status set yet</p>';
+    return `<table class="bom-table">${rows.map(([l,n])=>`<tr><td style="color:${SC[l]||'inherit'};font-weight:700;">${l}</td><td></td><td>${n}</td></tr>`).join('')}</table>`;
   }
-
-  const maxR = Math.max(...readersIn.concat(readersOut).map(r=>r[1]), 1);
-  const maxL = Math.max(...locks.map(r=>r[1]), 1);
+  const maxR = Math.max(...readers.map(r=>r[1]), 1);
+  const maxL = Math.max(...locks.map(r=>r[1]),   1);
 
   document.getElementById('bom-body').innerHTML = `
     <div class="bom-stats">
-      <div class="bom-stat"><div class="num">${totalPanels}</div><div class="lbl">Panels</div></div>
+      <div class="bom-stat"><div class="num">${panels.length}</div><div class="lbl">Panels</div></div>
       <div class="bom-stat"><div class="num">${total}</div><div class="lbl">Total Doors</div></div>
-      <div class="bom-stat"><div class="num">${readersIn.reduce((s,[,n])=>s+n,0)}</div><div class="lbl">Readers IN</div></div>
-      <div class="bom-stat"><div class="num">${readersOut.reduce((s,[,n])=>s+n,0)}</div><div class="lbl">Readers OUT</div></div>
-      <div class="bom-stat"><div class="num">${dsCount}</div><div class="lbl">Door Sensors</div></div>
-      <div class="bom-stat"><div class="num">${rteCount}</div><div class="lbl">RTE Relays</div></div>
+      <div class="bom-stat"><div class="num">${readers.reduce((s,[,n])=>s+n,0)}</div><div class="lbl">Readers</div></div>
+      <div class="bom-stat"><div class="num">${allDoors.filter(d=>d.dps).length}</div><div class="lbl">DPS</div></div>
+      <div class="bom-stat"><div class="num">${allDoors.filter(d=>d.dps==='Supervised').length}</div><div class="lbl">DPS Supervised</div></div>
+      <div class="bom-stat"><div class="num">${allDoors.filter(d=>d.rte).length}</div><div class="lbl">RTE</div></div>
     </div>
-    <div class="bom-section"><h3>Readers — Entry (IN)</h3>${bomTable(readersIn, maxR)}</div>
-    <div class="bom-section"><h3>Readers — Exit (OUT)</h3>${bomTable(readersOut, maxR)}</div>
+    <div class="bom-section"><h3>Reader Types</h3>${bomTable(readers, maxR)}</div>
     <div class="bom-section"><h3>Lock Types</h3>${bomTable(locks, maxL)}</div>
     <div class="bom-section"><h3>Door Types</h3>${bomTable(types, Math.max(...types.map(r=>r[1]),1))}</div>
     <div class="bom-section"><h3>REX Types</h3>${bomTable(rexTypes, Math.max(...rexTypes.map(r=>r[1]),1))}</div>
+    <div class="bom-section"><h3>Door Position Switch</h3>${bomTable(dpsTypes, Math.max(...dpsTypes.map(r=>r[1]),1))}</div>
+    <div class="bom-section"><h3>RTE</h3>${bomTable(rteTypes, Math.max(...rteTypes.map(r=>r[1]),1))}</div>
     <div class="bom-section"><h3>Commissioning Status</h3>${statusTable(statuses)}
       ${total ? `<p style="margin-top:8px;font-size:12px;color:var(--muted);">${total-statuses.reduce((s,[,n])=>s+n,0)} door${total-statuses.reduce((s,[,n])=>s+n,0)!==1?'s':''} with no status set</p>` : ''}
-    </div>
-  `;
+    </div>`;
   document.getElementById('bom-modal').classList.remove('hidden');
 }
-
 function closeBOM() { document.getElementById('bom-modal').classList.add('hidden'); }
-function closeBOMOnOverlay(e) { if (e.target === document.getElementById('bom-modal')) closeBOM(); }
+function closeBOMOnOverlay(e) { if (e.target===document.getElementById('bom-modal')) closeBOM(); }
 
 // ── PDF Export ────────────────────────────────────────────────────────────
 function exportPDF() {
   if (!panels.length) { toast('Add at least one panel first'); return; }
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
   const proj = getProjectFields();
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 12;
   let y = 0;
 
-  const C = {
-    bg:      [15,  17,  23],
-    surface: [26,  29,  39],
-    surface2:[34,  38,  58],
-    border:  [46,  51,  80],
-    accent:  [79,  142, 247],
-    green:   [34,  197, 94],
-    yellow:  [245, 158, 11],
-    orange:  [249, 115, 22],
-    muted:   [100, 116, 139],
-    text:    [226, 232, 240],
-    white:   [255, 255, 255],
-  };
-
-  const STATUS_COLORS = {
-    Designed:     [79,  142, 247],
-    Programmed:   [245, 158, 11],
-    Tested:       [249, 115, 22],
-    Commissioned: [34,  197, 94],
-  };
+  const C = { bg:[15,17,23], surface:[26,29,39], surface2:[34,38,58], border:[46,51,80], accent:[79,142,247], muted:[100,116,139], text:[226,232,240] };
+  const SC = { Designed:[79,142,247], Programmed:[245,158,11], Tested:[249,115,22], Commissioned:[34,197,94] };
 
   function addPageHeader() {
-    // Dark header bar
-    doc.setFillColor(...C.surface);
-    doc.rect(0, 0, pageW, 16, 'F');
-    doc.setTextColor(...C.accent);
-    doc.setFontSize(13);
-    doc.setFont('helvetica', 'bold');
-    doc.text('ReaderPro', margin, 10.5);
-    doc.setTextColor(...C.muted);
-    doc.setFontSize(8.5);
-    doc.setFont('helvetica', 'normal');
-    doc.text('/ Door Programming Schedule', margin + 30, 10.5);
-
-    // Page number right side
-    const pageNum = doc.internal.getCurrentPageInfo().pageNumber;
-    doc.setTextColor(...C.muted);
-    doc.setFontSize(8);
-    doc.text(`Page ${pageNum}`, pageW - margin, 10.5, { align: 'right' });
+    doc.setFillColor(...C.surface); doc.rect(0,0,pageW,16,'F');
+    doc.setTextColor(...C.accent); doc.setFontSize(13); doc.setFont('helvetica','bold');
+    doc.text('ReaderPro.io', margin, 10.5);
+    doc.setTextColor(...C.muted); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+    doc.text('/ Door Programming Schedule', margin+33, 10.5);
+    doc.setTextColor(...C.muted); doc.setFontSize(8);
+    doc.text(`Page ${doc.internal.getCurrentPageInfo().pageNumber}`, pageW-margin, 10.5, {align:'right'});
     y = 20;
   }
 
   function addProjectInfo() {
     const fields = [
-      proj.job_number  && { label: 'Job #',      value: proj.job_number },
-      proj.name        && { label: 'Project',     value: proj.name },
-      proj.site        && { label: 'Site',        value: proj.site },
-      proj.platform    && { label: 'Platform',    value: proj.platform },
-      proj.technician  && { label: 'Technician',  value: proj.technician },
-      proj.date        && { label: 'Date',        value: proj.date },
+      proj.job_number && { label:'Job #',       value:proj.job_number },
+      proj.name       && { label:'Project',      value:proj.name },
+      proj.site       && { label:'Site',         value:proj.site },
+      proj.platform   && { label:'Platform',     value:proj.platform },
+      proj.technician && { label:'Technician',   value:proj.technician },
+      proj.contact    && { label:'Contact',      value:proj.contact+(proj.phone?' · '+proj.phone:'') },
+      proj.date       && { label:'Date',         value:proj.date },
     ].filter(Boolean);
-
     const boxH = 11;
     doc.setFillColor(...C.surface2);
-    doc.roundedRect(margin, y, pageW - margin * 2, boxH, 2, 2, 'F');
-
-    const colW = (pageW - margin * 2) / fields.length;
-    fields.forEach((f, i) => {
-      const x = margin + i * colW + 4;
-      doc.setTextColor(...C.muted);
-      doc.setFontSize(6.5);
-      doc.setFont('helvetica', 'bold');
-      doc.text(f.label.toUpperCase(), x, y + 4);
-      doc.setTextColor(...C.text);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.text(String(f.value), x, y + 9);
+    doc.roundedRect(margin, y, pageW-margin*2, boxH, 2, 2, 'F');
+    const colW = (pageW-margin*2) / fields.length;
+    fields.forEach((f,i) => {
+      const x = margin+i*colW+4;
+      doc.setTextColor(...C.muted); doc.setFontSize(6.5); doc.setFont('helvetica','bold');
+      doc.text(f.label.toUpperCase(), x, y+4);
+      doc.setTextColor(...C.text); doc.setFontSize(8); doc.setFont('helvetica','normal');
+      doc.text(String(f.value), x, y+9);
     });
-    y += boxH + 6;
+    y += boxH+6;
   }
 
   function addPanelSection(panel) {
     const pageH = doc.internal.pageSize.getHeight();
-    // If panel header + at least 2 rows won't fit, new page
-    if (y + 30 > pageH - 12) { doc.addPage(); addPageHeader(); }
-
-    // Panel header
-    doc.setFillColor(...C.surface);
-    doc.roundedRect(margin, y, pageW - margin * 2, 10, 1.5, 1.5, 'F');
-    doc.setTextColor(...C.accent);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('🗄  ' + (panel.name || 'Unnamed Panel'), margin + 4, y + 6.5);
-
-    // Panel meta on the right
+    if (y+30 > pageH-12) { doc.addPage(); addPageHeader(); }
+    doc.setFillColor(...C.surface); doc.roundedRect(margin, y, pageW-margin*2, 10, 1.5, 1.5, 'F');
+    doc.setTextColor(...C.accent); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text('🗄  '+(panel.name||'Unnamed Panel'), margin+4, y+6.5);
     const meta = [panel.model, panel.ip, panel.location].filter(Boolean).join('  ·  ');
-    if (meta) {
-      doc.setTextColor(...C.muted);
-      doc.setFontSize(7.5);
-      doc.setFont('helvetica', 'normal');
-      doc.text(meta, pageW - margin - 4, y + 6.5, { align: 'right' });
-    }
+    if (meta) { doc.setTextColor(...C.muted); doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.text(meta, pageW-margin-4, y+6.5, {align:'right'}); }
     y += 12;
-
     if (!panel.doors.length) {
-      doc.setTextColor(...C.muted);
-      doc.setFontSize(8);
-      doc.text('No doors configured', margin + 4, y + 5);
-      y += 10;
-      return;
+      doc.setTextColor(...C.muted); doc.setFontSize(8); doc.text('No doors configured', margin+4, y+5); y += 10; return;
     }
-
-    // Door table
     const cols = [
-      { header: '#',          dataKey: 'num'     },
-      { header: 'Status',     dataKey: 'status'  },
-      { header: 'Door Name',  dataKey: 'name'    },
-      { header: 'Location',   dataKey: 'loc'     },
-      { header: 'Type',       dataKey: 'dtype'   },
-      { header: 'Lock',       dataKey: 'lock'    },
-      { header: 'Reader IN',  dataKey: 'rdrIn'   },
-      { header: 'Addr IN',    dataKey: 'addrIn'  },
-      { header: 'Reader OUT', dataKey: 'rdrOut'  },
-      { header: 'Addr OUT',   dataKey: 'addrOut' },
-      { header: 'REX',        dataKey: 'rex'     },
-      { header: 'DS',         dataKey: 'ds'      },
-      { header: 'RTE',        dataKey: 'rte'     },
-      { header: 'Notes',      dataKey: 'notes'   },
+      {header:'#',dataKey:'num'},{header:'Status',dataKey:'status'},{header:'Door Name',dataKey:'name'},
+      {header:'Zone/Floor',dataKey:'loc'},{header:'Type',dataKey:'dtype'},{header:'Lock',dataKey:'lock'},
+      {header:'Reader IN',dataKey:'rdrIn'},{header:'Addr',dataKey:'addr'},
+      {header:'REX',dataKey:'rex'},{header:'DPS',dataKey:'dps'},{header:'RTE',dataKey:'rte'},{header:'Notes',dataKey:'notes'},
     ];
-
-    const rows = panel.doors.map((d, i) => ({
-      num:     i + 1,
-      status:  d.status  || '',
-      name:    d.name    || '',
-      loc:     d.location|| '',
-      dtype:   d.doorType|| '',
-      lock:    d.lockType|| '',
-      rdrIn:   d.readerIn|| '',
-      addrIn:  d.readerInAddr || '',
-      rdrOut:  d.readerOut|| '',
-      addrOut: d.readerOutAddr|| '',
-      rex:     d.rex     || '',
-      ds:      d.ds  ? '✓' : '',
-      rte:     d.rte ? '✓' : '',
-      notes:   d.notes   || '',
+    const rows = panel.doors.map((d,i) => ({
+      num:i+1, status:d.status||'', name:d.name||'', loc:d.location||'',
+      dtype:d.doorType||'', lock:d.lockType||'', rdrIn:d.readerIn||'', addr:d.readerInAddr||'',
+      rex:d.rex||'', dps:d.dps||'', rte:d.rte||'', notes:d.notes||''
     }));
-
     doc.autoTable({
-      startY: y,
-      columns: cols,
-      body: rows,
-      theme: 'plain',
-      margin: { left: margin, right: margin },
-      styles: {
-        fontSize: 7.5,
-        cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 },
-        textColor: C.text,
-        lineColor: C.border,
-        lineWidth: 0.2,
-        fillColor: C.surface,
-      },
-      headStyles: {
-        fillColor: C.surface2,
-        textColor: C.muted,
-        fontStyle: 'bold',
-        fontSize: 6.5,
-      },
-      alternateRowStyles: { fillColor: [20, 23, 35] },
-      columnStyles: {
-        num:     { cellWidth: 8,  halign: 'center' },
-        status:  { cellWidth: 24 },
-        name:    { cellWidth: 30 },
-        loc:     { cellWidth: 24 },
-        dtype:   { cellWidth: 20 },
-        lock:    { cellWidth: 24 },
-        rdrIn:   { cellWidth: 24 },
-        addrIn:  { cellWidth: 13 },
-        rdrOut:  { cellWidth: 24 },
-        addrOut: { cellWidth: 13 },
-        rex:     { cellWidth: 16 },
-        ds:      { cellWidth: 8,  halign: 'center' },
-        rte:     { cellWidth: 8,  halign: 'center' },
-        notes:   { cellWidth: 'auto' },
-      },
+      startY:y, columns:cols, body:rows, theme:'plain',
+      margin:{left:margin,right:margin},
+      styles:{fontSize:7.5,cellPadding:{top:2.5,bottom:2.5,left:3,right:3},textColor:C.text,lineColor:C.border,lineWidth:0.2,fillColor:C.surface},
+      headStyles:{fillColor:C.surface2,textColor:C.muted,fontStyle:'bold',fontSize:6.5},
+      alternateRowStyles:{fillColor:[20,23,35]},
+      columnStyles:{num:{cellWidth:8,halign:'center'},status:{cellWidth:22},name:{cellWidth:30},loc:{cellWidth:20},dtype:{cellWidth:18},lock:{cellWidth:22},rdrIn:{cellWidth:22},addr:{cellWidth:12},rex:{cellWidth:14},dps:{cellWidth:16},rte:{cellWidth:16},notes:{cellWidth:'auto'}},
       didParseCell(data) {
-        // Color-code status cells
-        if (data.column.dataKey === 'status' && data.section === 'body') {
-          const sc = STATUS_COLORS[data.cell.raw];
-          if (sc) {
-            data.cell.styles.textColor = sc;
-            data.cell.styles.fontStyle = 'bold';
-          }
+        if (data.column.dataKey==='status' && data.section==='body') {
+          const sc = SC[data.cell.raw]; if (sc) { data.cell.styles.textColor=sc; data.cell.styles.fontStyle='bold'; }
         }
       },
       didDrawPage() { addPageHeader(); },
     });
-
-    y = doc.lastAutoTable.finalY + 8;
+    y = doc.lastAutoTable.finalY+8;
   }
 
-  // ── Build document ────────────────────────────────────────────────────
-  addPageHeader();
-  addProjectInfo();
+  addPageHeader(); addProjectInfo();
   panels.forEach(p => addPanelSection(p));
-
-  // Footer on last page
   const pageH = doc.internal.pageSize.getHeight();
-  doc.setTextColor(...C.muted);
-  doc.setFontSize(7);
-  doc.text(`Generated by ReaderPro · readerpro.io · ${new Date().toLocaleString()}`, pageW / 2, pageH - 6, { align: 'center' });
-
-  const safeName = (proj.job_number || proj.name || 'readerpro').replace(/[^a-z0-9]/gi, '_').toLowerCase();
-  doc.save(`${safeName}_door_schedule.pdf`);
+  doc.setTextColor(...C.muted); doc.setFontSize(7);
+  doc.text(`Generated by ReaderPro.io · ${new Date().toLocaleString()}`, pageW/2, pageH-6, {align:'center'});
+  doc.save(safeName()+'_door_schedule.pdf');
   toast('📄 PDF exported!');
+}
+
+// ── Load Example ──────────────────────────────────────────────────────────
+function loadExample() {
+  if (panels.length && !confirm('This will replace your current project. Continue?')) return;
+  document.getElementById('projJob').value     = '2024-1138';
+  document.getElementById('projName').value    = 'Northgate Corporate Center';
+  document.getElementById('projSite').value    = '4800 Oak Blvd, Suite 100';
+  document.getElementById('projPlatform').value= 'Lenel OnGuard';
+  document.getElementById('projTech').value    = 'J. Rivera';
+  document.getElementById('projContact').value = 'Mike Thornton';
+  document.getElementById('projPhone').value   = '(512) 555-0192';
+  document.getElementById('projDate').value    = today();
+
+  panels = [
+    {
+      id:genId(), name:'Main Panel — LNL-3300', location:'IDF Room 1A', model:'LNL-3300',
+      ip:'10.10.20.15', mask:'255.255.255.0', gateway:'10.10.20.1', dns1:'8.8.8.8', dns2:'8.8.4.4', network:'ACS-VLAN 20', notes:'Primary access panel',
+      doors:[
+        {id:genId(),name:'Main Lobby Entry',       location:'Level 1',  doorType:'Entry',         lockType:'Mag Lock',       readerIn:'HID Multiclass', readerInAddr:'0-0', rex:'Motion',      dps:'Supervised', rte:'Standard',   status:'Commissioned', notes:''},
+        {id:genId(),name:'Stairwell A — Level 1',  location:'Level 1',  doorType:'Stairwell',     lockType:'Electric Strike',readerIn:'HID Multiclass', readerInAddr:'0-1', rex:'Push Button',  dps:'Standard',   rte:'',           status:'Commissioned', notes:''},
+        {id:genId(),name:'Server Room',            location:'Level 1',  doorType:'Server Room',   lockType:'Mag Lock',       readerIn:'HID Signo',      readerInAddr:'0-2', rex:'Motion',       dps:'Supervised', rte:'Supervised', status:'Tested',       notes:'Biometric upgrade Q2'},
+        {id:genId(),name:'Loading Dock',           location:'Level 1',  doorType:'Loading Dock',  lockType:'Electric Strike',readerIn:'HID iCLASS',     readerInAddr:'0-3', rex:'Crash Bar',    dps:'Standard',   rte:'',           status:'Programmed',   notes:''},
+      ]
+    },
+    {
+      id:genId(), name:'Expansion Panel — LNL-1320', location:'IDF Room 2B', model:'LNL-1320',
+      ip:'10.10.20.16', mask:'255.255.255.0', gateway:'10.10.20.1', dns1:'8.8.8.8', dns2:'', network:'ACS-VLAN 20', notes:'',
+      doors:[
+        {id:genId(),name:'Suite 200 Entry',        location:'Level 2',  doorType:'Entry',         lockType:'Electric Strike',readerIn:'HID Multiclass', readerInAddr:'1-0', rex:'Motion',       dps:'Standard',   rte:'',           status:'Programmed',   notes:''},
+        {id:genId(),name:'Conference Room A',      location:'Level 2',  doorType:'Interior',      lockType:'Electric Mortise',readerIn:'HID Signo',    readerInAddr:'1-1', rex:'Push Button',  dps:'Standard',   rte:'',           status:'Designed',     notes:''},
+        {id:genId(),name:'Roof Access',            location:'Level R',  doorType:'Stairwell',     lockType:'Mag Lock',       readerIn:'HID iCLASS',     readerInAddr:'1-2', rex:'Push Button',  dps:'Supervised', rte:'Standard',   status:'Designed',     notes:'Alarm tie-in required'},
+      ]
+    }
+  ];
+  renderAll();
+  toast('💡 Example project loaded!');
 }
 
 // ── Utils ─────────────────────────────────────────────────────────────────
 function copyOutput() {
-  const pre = document.getElementById('output-pre');
-  if (!pre) return;
+  const pre = document.getElementById('output-pre'); if (!pre) return;
   navigator.clipboard.writeText(pre.innerText).then(() => toast('Copied!'));
 }
-function esc(str)    { return (str||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function escHtml(s)  { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(str)   { return (str||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function toast(msg, dur=2400) {
   const el = document.getElementById('toast');
   el.textContent = msg; el.classList.add('show');
@@ -1052,15 +967,33 @@ function toast(msg, dur=2400) {
 
 // ── Init ──────────────────────────────────────────────────────────────────
 document.getElementById('projDate').value = today();
-['projJob','projName','projSite','projPlatform','projTech','projDate'].forEach(id => {
+['projJob','projName','projSite','projPlatform','projTech','projContact','projPhone','projDate'].forEach(id => {
   const el = document.getElementById(id);
   el.addEventListener('input',  () => { renderOutput(); syncURL(); });
   el.addEventListener('change', () => { renderOutput(); syncURL(); });
 });
-
-// Load from URL hash if present, otherwise fresh start
 loadFromURL();
 if (!panels.length) renderAll();
+if (window.lucide) {
+  lucide.createIcons();
+  // set body add-panel button content after icons render
+  const bodyBtn = document.getElementById('add-panel-body-btn');
+  if (bodyBtn) bodyBtn.innerHTML = (bodyBtn.querySelector('svg') ? '' : '') +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span style="margin-left:5px;">Add Controller / Panel</span>`;
+}
 </script>
+
+<!-- FOOTER -->
+<footer style="text-align:center;padding:24px 20px 32px;color:#64748b;font-size:12px;border-top:1px solid #2e3350;margin-top:8px;">
+  <span style="background:#22263a;border:1px solid #2e3350;border-radius:20px;padding:3px 10px;font-weight:700;letter-spacing:0.03em;">
+    v0.5.260308 <!-- VERSION -->
+  </span>
+  &nbsp;·&nbsp;
+  ReaderPro.io
+  &nbsp;·&nbsp;
+  <!-- GITHUB URL -->
+  <a href="https://github.com/drounseville/readerpro" target="_blank" style="color:#4f8ef7;text-decoration:none;font-weight:600;">GitHub</a>
+</footer>
+
 </body>
 </html>
