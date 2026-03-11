@@ -191,6 +191,22 @@
   }
 
   @media (max-width: 700px) { main { padding: 12px; } .project-bar { flex-direction: column; align-items: flex-start; } }
+
+  /* ── Sub-panels ── */
+  .subpanels-section { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+  .subpanel-card { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .subpanel-header {
+    background: rgba(79,142,247,0.07); border-bottom: 1px solid var(--border);
+    padding: 7px 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .subpanel-name-input { background: transparent; border: none; color: var(--text); font-size: 13px; font-weight: 600; flex: 1; min-width: 100px; }
+  .subpanel-name-input:focus { outline: none; border-bottom: 1px solid var(--accent); }
+  .addr-badge { background: var(--accent); color: #fff; border-radius: 4px; padding: 2px 8px; font-size: 10px; font-weight: 800; letter-spacing: 0.04em; white-space: nowrap; flex-shrink: 0; }
+  .subpanel-body { padding: 10px 12px; }
+  .subpanel-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .subpanel-meta .meta-field { flex: 1; min-width: 130px; }
+  .subpanel-section-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .subpanels-add-wrap { margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -331,7 +347,13 @@ const IC = {
   plus:   `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
   db:     `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>`,
   shield: `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  cpu:    `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2M9 2v2M15 20v2M9 20v2M2 15h2M2 9h2M20 15h2M20 9h2"/></svg>`,
 };
+
+// ── All doors in a panel (direct + sub-panel) ─────────────────────────────
+function panelAllDoors(p) {
+  return [...(p.doors||[]), ...(p.subpanels||[]).flatMap(sp => sp.doors||[])];
+}
 
 let panels = [];
 let activeTab = 'yaml';
@@ -341,7 +363,7 @@ function today()  { return new Date().toISOString().split('T')[0]; }
 
 // ── Panel CRUD ────────────────────────────────────────────────────────────
 function addPanel() {
-  const p = { id:genId(), name:'Panel '+(panels.length+1), location:'', model:'', ip:'', mask:'', gateway:'', dns1:'', dns2:'', network:'', notes:'', doors:[] };
+  const p = { id:genId(), name:'Panel '+(panels.length+1), location:'', model:'', ip:'', mask:'', gateway:'', dns1:'', dns2:'', network:'', notes:'', doors:[], subpanels:[] };
   panels.push(p);
   renderAll();
   setTimeout(() => { const el = document.getElementById('pname_'+p.id); if(el){el.focus();el.select();} }, 50);
@@ -379,22 +401,88 @@ function duplicatePanel(pid) {
     ...src,
     id: genId(),
     name: src.name ? src.name + ' (copy)' : 'Panel (copy)',
-    doors: src.doors.map(d => ({ ...d, id: genId(), status: '' }))
+    doors: (src.doors||[]).map(d => ({ ...d, id: genId(), status: '' })),
+    subpanels: (src.subpanels||[]).map(sp => ({
+      ...sp, id: genId(),
+      doors: (sp.doors||[]).map(d => ({ ...d, id: genId(), status: '' }))
+    }))
   };
   panels.splice(panels.indexOf(src) + 1, 0, clone);
+  renderAll();
+}
+
+// ── Sub-panel CRUD ────────────────────────────────────────────────────────
+function nextSubPanelAddr(panel) {
+  const addrs = (panel.subpanels||[]).map(s => s.address !== undefined ? Number(s.address) : 0);
+  return addrs.length ? Math.max(...addrs) + 1 : 0;
+}
+function addSubPanel(pid) {
+  const panel = panels.find(p => p.id === pid);
+  if (!panel) return;
+  if (!panel.subpanels) panel.subpanels = [];
+  const addr = nextSubPanelAddr(panel);
+  panel.subpanels.push({ id:genId(), name:'Sub-Panel '+addr, model:'', location:'', address:addr, notes:'', doors:[] });
+  renderAll();
+}
+function removeSubPanel(pid, spid) {
+  if (!confirm('Remove this sub-panel and all its doors?')) return;
+  const panel = panels.find(p => p.id === pid);
+  if (!panel) return;
+  panel.subpanels = (panel.subpanels||[]).filter(sp => sp.id !== spid);
+  renderAll();
+}
+function duplicateSubPanel(pid, spid) {
+  const panel = panels.find(p => p.id === pid);
+  if (!panel) return;
+  const src = (panel.subpanels||[]).find(sp => sp.id === spid);
+  if (!src) return;
+  const nextAddr = nextSubPanelAddr(panel);
+  const clone = { ...src, id:genId(), name: src.name+' (copy)', address:nextAddr, doors:(src.doors||[]).map(d=>({...d,id:genId(),status:''})) };
+  panel.subpanels.splice(panel.subpanels.indexOf(src)+1, 0, clone);
+  renderAll();
+}
+function addDoorToSubPanel(pid, spid) {
+  const panel = panels.find(p => p.id === pid);
+  if (!panel) return;
+  const sp = (panel.subpanels||[]).find(s => s.id === spid);
+  if (!sp) return;
+  if (!sp.doors) sp.doors = [];
+  const addr = sp.address !== undefined ? sp.address : 0;
+  sp.doors.push({ id:genId(), name:'', location:'', doorType:'', lockType:'', readerIn:'', readerInAddr:`${addr}-${sp.doors.length}`, rex:'Motion', dps:'Standard', rte:'', status:'', notes:'' });
+  renderAll();
+}
+function duplicateSubPanelDoor(pid, spid, did) {
+  const panel = panels.find(p => p.id === pid);
+  if (!panel) return;
+  const sp = (panel.subpanels||[]).find(s => s.id === spid);
+  if (!sp) return;
+  const src = (sp.doors||[]).find(d => d.id === did);
+  if (!src) return;
+  const clone = { ...src, id:genId(), name: src.name ? src.name+' (copy)' : '', status:'' };
+  sp.doors.splice(sp.doors.indexOf(src)+1, 0, clone);
+  renderAll();
+}
+function removeSubPanelDoor(pid, spid, did) {
+  const panel = panels.find(p => p.id === pid);
+  if (!panel) return;
+  const sp = (panel.subpanels||[]).find(s => s.id === spid);
+  if (!sp) return;
+  sp.doors = (sp.doors||[]).filter(d => d.id !== did);
   renderAll();
 }
 
 // ── Render ────────────────────────────────────────────────────────────────
 function renderAll() { renderPanels(); renderOutput(); syncURL(); if (window.lucide) lucide.createIcons(); }
 
-function panelProgressChips(doors) {
+function panelProgressChips(p) {
+  const doors = panelAllDoors(p);
   if (!doors.length) return '';
   const counts = {};
   doors.forEach(d => { if (d.status) counts[d.status] = (counts[d.status]||0)+1; });
   return Object.entries(counts).map(([s,n]) => `<span class="prog-chip ${STATUS_CLASS[s]||''}">${n} ${s}</span>`).join('');
 }
-function statusBarHTML(doors) {
+function statusBarHTML(p) {
+  const doors = panelAllDoors(p);
   if (!doors.length) return '';
   const counts = { Designed:0, Programmed:0, Tested:0, Commissioned:0 };
   doors.forEach(d => { if (d.status && counts[d.status]!==undefined) counts[d.status]++; });
@@ -411,21 +499,29 @@ function renderPanels() {
     container.innerHTML = `<div class="empty-state" style="margin-bottom:20px;"><div class="big" style="color:var(--muted)">${IC.db}</div><div>No panels yet — click <strong>+ Add Controller / Panel</strong> to start</div></div>`;
     return;
   }
-  container.innerHTML = panels.map(p => `
+  container.innerHTML = panels.map(p => {
+    const allDoors = panelAllDoors(p);
+    const totalDoors = allDoors.length;
+    const hasSubs = p.subpanels && p.subpanels.length > 0;
+    const directLabel = hasSubs ? `<div class="subpanel-section-label" style="margin-top:0;padding-top:0;border-top:none;margin-bottom:8px;">Onboard / Direct Connections</div>` : '';
+    const subpanelsSection = hasSubs ? `
+      <div class="subpanel-section-label">Sub-Panels</div>
+      <div class="subpanels-section">${p.subpanels.map((sp,spi) => renderSubPanel(p.id,sp,spi)).join('')}</div>` : '';
+    return `
     <div class="panel-card" id="panel_${p.id}">
       <div class="panel-card-header">
         <span style="color:var(--accent);flex-shrink:0;display:flex;">${IC.server}</span>
         <input class="panel-name-input" id="pname_${p.id}" value="${esc(p.name)}" placeholder="Panel / Controller Name" oninput="updatePanel('${p.id}','name',this.value)" />
-        <div class="panel-progress">${panelProgressChips(p.doors)}</div>
-        <span class="badge" style="flex-shrink:0;">${p.doors.length} door${p.doors.length!==1?'s':''}</span>
+        <div class="panel-progress">${panelProgressChips(p)}</div>
+        <span class="badge" style="flex-shrink:0;">${totalDoors} door${totalDoors!==1?'s':''}</span>
         <button class="btn btn-icon btn-sm" title="Duplicate panel" onclick="duplicatePanel('${p.id}')">${IC.copy}</button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="removePanel('${p.id}')">${IC.x}</button>
       </div>
-      ${statusBarHTML(p.doors)}
+      ${statusBarHTML(p)}
       <div class="panel-card-body">
         <div class="panel-meta">
           <div class="meta-field"><label>Physical Location</label><input type="text" value="${esc(p.location)}" placeholder="e.g. IDF Room 2A" oninput="updatePanel('${p.id}','location',this.value)" /></div>
-          <div class="meta-field"><label>Model / Type</label><input type="text" value="${esc(p.model)}" placeholder="e.g. Mercury EP-1502" oninput="updatePanel('${p.id}','model',this.value)" /></div>
+          <div class="meta-field"><label>Model / Type</label><input type="text" value="${esc(p.model)}" placeholder="e.g. LNL-X2220" oninput="updatePanel('${p.id}','model',this.value)" /></div>
           <div class="meta-field"><label>IP Address</label><input type="text" value="${esc(p.ip)}" placeholder="192.168.x.x" oninput="updatePanel('${p.id}','ip',this.value)" /></div>
           <div class="meta-field"><label>Subnet Mask</label><input type="text" value="${esc(p.mask)}" placeholder="255.255.255.0" oninput="updatePanel('${p.id}','mask',this.value)" /></div>
           <div class="meta-field"><label>Gateway</label><input type="text" value="${esc(p.gateway)}" placeholder="192.168.x.1" oninput="updatePanel('${p.id}','gateway',this.value)" /></div>
@@ -437,6 +533,7 @@ function renderPanels() {
           <label>Notes</label>
           <input type="text" value="${esc(p.notes)}" placeholder="Optional notes" oninput="updatePanel('${p.id}','notes',this.value)" style="width:100%;" />
         </div>
+        ${directLabel}
         <div class="doors-table-wrap">
           <table>
             <thead><tr>
@@ -444,14 +541,19 @@ function renderPanels() {
               <th>Type</th><th>Lock</th><th>Reader IN</th><th>Reader Addr</th>
               <th>REX</th><th title="Door Position Switch">DPS</th><th>RTE</th><th>Notes</th><th></th>
             </tr></thead>
-            <tbody>${p.doors.map((d,i) => renderDoorRow(p.id,d,i)).join('')}</tbody>
+            <tbody>${(p.doors||[]).map((d,i) => renderDoorRow(p.id,d,i)).join('')}</tbody>
             <tfoot><tr class="add-row"><td colspan="13">
-              <button class="btn btn-secondary btn-sm" onclick="addDoor('${p.id}')">${IC.plus}<span style="margin-left:5px;">Add Door</span></button>
+              <button class="btn btn-secondary btn-sm" onclick="addDoor('${p.id}')">${IC.plus}<span style="margin-left:5px;">${hasSubs?'Add Direct Door':'Add Door'}</span></button>
             </td></tr></tfoot>
           </table>
         </div>
+        ${subpanelsSection}
+        <div class="subpanels-add-wrap">
+          <button class="btn btn-secondary btn-sm" onclick="addSubPanel('${p.id}')">${IC.cpu}<span style="margin-left:5px;">Add Sub-Panel</span></button>
+        </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function renderDoorRow(pid, d, i) {
@@ -484,6 +586,71 @@ function renderDoorRow(pid, d, i) {
   </tr>`;
 }
 
+function renderSubPanel(pid, sp, spi) {
+  const doors = sp.doors || [];
+  const addr = sp.address !== undefined ? sp.address : spi;
+  return `
+  <div class="subpanel-card" id="subpanel_${sp.id}">
+    <div class="subpanel-header">
+      <span style="color:var(--accent);display:flex;flex-shrink:0;">${IC.cpu}</span>
+      <input class="subpanel-name-input" value="${esc(sp.name)}" placeholder="Sub-Panel Name / Label" oninput="updateSubPanel('${pid}','${sp.id}','name',this.value)" />
+      <span style="color:var(--muted);font-size:11px;white-space:nowrap;">${doors.length} door${doors.length!==1?'s':''}</span>
+      <button class="btn btn-icon btn-sm" title="Duplicate sub-panel" onclick="duplicateSubPanel('${pid}','${sp.id}')">${IC.copy}</button>
+      <button class="btn btn-danger btn-sm btn-icon" onclick="removeSubPanel('${pid}','${sp.id}')">${IC.x}</button>
+    </div>
+    <div class="subpanel-body">
+      <div class="subpanel-meta">
+        <div class="meta-field"><label>Model / Type</label><input type="text" value="${esc(sp.model)}" placeholder="e.g. LNL-1320" oninput="updateSubPanel('${pid}','${sp.id}','model',this.value)" /></div>
+        <div class="meta-field"><label>Physical Location</label><input type="text" value="${esc(sp.location)}" placeholder="Same rack / IDF" oninput="updateSubPanel('${pid}','${sp.id}','location',this.value)" /></div>
+        <div class="meta-field" style="max-width:140px;"><label>Address</label><input type="number" min="0" max="31" value="${addr}" oninput="updateSubPanel('${pid}','${sp.id}','address',parseInt(this.value)||0)" /></div>
+        <div class="meta-field"><label>Notes</label><input type="text" value="${esc(sp.notes)}" placeholder="Optional" oninput="updateSubPanel('${pid}','${sp.id}','notes',this.value)" /></div>
+      </div>
+      <div class="doors-table-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Status</th><th>Door Name</th><th>Zone / Floor</th>
+            <th>Type</th><th>Lock</th><th>Reader IN</th><th>Reader Addr</th>
+            <th>REX</th><th title="Door Position Switch">DPS</th><th>RTE</th><th>Notes</th><th></th>
+          </tr></thead>
+          <tbody>${doors.map((d,i) => renderSubPanelDoorRow(pid,sp.id,d,i)).join('')}</tbody>
+          <tfoot><tr class="add-row"><td colspan="13">
+            <button class="btn btn-secondary btn-sm" onclick="addDoorToSubPanel('${pid}','${sp.id}')">${IC.plus}<span style="margin-left:5px;">Add Door</span></button>
+          </td></tr></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderSubPanelDoorRow(pid, spid, d, i) {
+  const sel = (arr, val) => arr.map(t => `<option ${val===t?'selected':''}>${t}</option>`).join('');
+  const statusClass = STATUS_CLASS[d.status] ? `status-${STATUS_CLASS[d.status]}` : '';
+  const statusOpts = DOOR_STATUSES.map(s => `<option ${d.status===s?'selected':''}>${s}</option>`).join('');
+  const dpsClass  = d.dps === 'Supervised' ? 'sup-supervised' : '';
+  const rteClass  = d.rte === 'Supervised' ? 'sup-supervised' : '';
+  return `<tr id="door_${d.id}">
+    <td style="text-align:center;color:var(--muted);font-weight:700;width:26px;">${i+1}</td>
+    <td><select class="status-select ${statusClass}" onchange="updateSubPanelDoor('${pid}','${spid}','${d.id}','status',this.value);this.className='status-select'+(this.value?' status-'+this.value.toLowerCase():'')">
+      <option value="">—</option>${statusOpts}</select></td>
+    <td><input type="text" value="${esc(d.name)}" placeholder="Door name" oninput="updateSubPanelDoor('${pid}','${spid}','${d.id}','name',this.value)" style="min-width:110px;" /></td>
+    <td><input type="text" value="${esc(d.location)}" placeholder="Zone / floor" oninput="updateSubPanelDoor('${pid}','${spid}','${d.id}','location',this.value)" style="min-width:80px;" /></td>
+    <td><select onchange="updateSubPanelDoor('${pid}','${spid}','${d.id}','doorType',this.value)"><option value="">—</option>${sel(DOOR_TYPES,d.doorType)}</select></td>
+    <td><select onchange="updateSubPanelDoor('${pid}','${spid}','${d.id}','lockType',this.value)"><option value="">—</option>${sel(DOOR_LOCK_TYPES,d.lockType)}</select></td>
+    <td><select onchange="updateSubPanelDoor('${pid}','${spid}','${d.id}','readerIn',this.value)" style="min-width:100px;"><option value="">—</option>${sel(READER_TYPES,d.readerIn)}</select></td>
+    <td><input type="text" value="${esc(d.readerInAddr)}" placeholder="Port/Addr" oninput="updateSubPanelDoor('${pid}','${spid}','${d.id}','readerInAddr',this.value)" style="min-width:60px;" /></td>
+    <td><select onchange="updateSubPanelDoor('${pid}','${spid}','${d.id}','rex',this.value)"><option value="">—</option>${sel(REX_TYPES,d.rex)}</select></td>
+    <td><select class="sup-select ${dpsClass}" onchange="updateSubPanelDoor('${pid}','${spid}','${d.id}','dps',this.value);this.className='sup-select'+(this.value==='Supervised'?' sup-supervised':'')">
+      <option value="">—</option>${sel(SUP_OPTIONS,d.dps)}</select></td>
+    <td><select class="sup-select ${rteClass}" onchange="updateSubPanelDoor('${pid}','${spid}','${d.id}','rte',this.value);this.className='sup-select'+(this.value==='Supervised'?' sup-supervised':'')">
+      <option value="">—</option>${sel(SUP_OPTIONS,d.rte)}</select></td>
+    <td><input type="text" value="${esc(d.notes)}" placeholder="Notes" oninput="updateSubPanelDoor('${pid}','${spid}','${d.id}','notes',this.value)" style="min-width:80px;" /></td>
+    <td style="white-space:nowrap;">
+      <button class="btn btn-icon btn-sm" onclick="duplicateSubPanelDoor('${pid}','${spid}','${d.id}')" title="Duplicate" style="margin-right:3px;">${IC.copy}</button>
+      <button class="btn btn-danger btn-sm btn-icon" onclick="removeSubPanelDoor('${pid}','${spid}','${d.id}')" title="Remove">${IC.x}</button>
+    </td>
+  </tr>`;
+}
+
 // ── Update helpers ────────────────────────────────────────────────────────
 function updatePanel(pid, field, value) {
   const p = panels.find(p => p.id === pid);
@@ -496,9 +663,31 @@ function updateDoor(pid, did, field, value) {
   const d = p.doors.find(d => d.id === did);
   if (d) d[field] = value;
   const chips = document.querySelector(`#panel_${pid} .panel-progress`);
-  if (chips) chips.innerHTML = panelProgressChips(p.doors);
+  if (chips) chips.innerHTML = panelProgressChips(p);
   const bar = document.querySelector(`#panel_${pid} .status-bar-wrap`);
-  if (bar) bar.outerHTML = statusBarHTML(p.doors);
+  if (bar) bar.outerHTML = statusBarHTML(p);
+  renderOutput(); syncURL();
+}
+
+function updateSubPanel(pid, spid, field, value) {
+  const panel = panels.find(p => p.id === pid);
+  if (!panel) return;
+  const sp = (panel.subpanels||[]).find(s => s.id === spid);
+  if (sp) sp[field] = value;
+  renderOutput(); syncURL();
+}
+function updateSubPanelDoor(pid, spid, did, field, value) {
+  const panel = panels.find(p => p.id === pid);
+  if (!panel) return;
+  const sp = (panel.subpanels||[]).find(s => s.id === spid);
+  if (!sp) return;
+  const d = (sp.doors||[]).find(d => d.id === did);
+  if (d) d[field] = value;
+  // update panel-level progress chips + bar
+  const chips = document.querySelector(`#panel_${pid} .panel-progress`);
+  if (chips) chips.innerHTML = panelProgressChips(panel);
+  const bar = document.querySelector(`#panel_${pid} .status-bar-wrap`);
+  if (bar) bar.outerHTML = statusBarHTML(panel);
   renderOutput(); syncURL();
 }
 
@@ -517,30 +706,36 @@ function getProjectFields() {
 }
 
 function buildData() {
+  function serializeDoor(d, i) {
+    const obj = {
+      name: d.name, number: i + 1, location: d.location, status: d.status || null,
+      door_type: d.doorType, lock_type: d.lockType,
+      reader_in: d.readerIn ? { type: d.readerIn, address: d.readerInAddr } : null,
+      rex: d.rex, door_position_switch: d.dps || null, rte_relay: d.rte || null, notes: d.notes
+    };
+    if (!obj.reader_in) delete obj.reader_in;
+    Object.keys(obj).forEach(k => { if (obj[k]===''||obj[k]===null) delete obj[k]; });
+    return obj;
+  }
   return {
     project: { ...getProjectFields(), generated: new Date().toISOString() },
-    panels: panels.map(p => ({
-      name: p.name, location: p.location, model: p.model,
-      network: { ip: p.ip, mask: p.mask, gateway: p.gateway, dns1: p.dns1, dns2: p.dns2, vlan: p.network },
-      notes: p.notes,
-      doors: p.doors.map((d, i) => {
-        const obj = {
-          name: d.name,           // name first so it shows when collapsed
-          number: i + 1,
-          location: d.location,
-          status: d.status || null,
-          door_type: d.doorType, lock_type: d.lockType,
-          reader_in: d.readerIn ? { type: d.readerIn, address: d.readerInAddr } : null,
-          rex: d.rex,
-          door_position_switch: d.dps  || null,
-          rte_relay:            d.rte  || null,
-          notes: d.notes
-        };
-        if (!obj.reader_in) delete obj.reader_in;
-        Object.keys(obj).forEach(k => { if (obj[k]===''||obj[k]===null) delete obj[k]; });
-        return obj;
-      })
-    }))
+    panels: panels.map(p => {
+      const obj = {
+        name: p.name, location: p.location, model: p.model,
+        network: { ip: p.ip, mask: p.mask, gateway: p.gateway, dns1: p.dns1, dns2: p.dns2, vlan: p.network },
+        notes: p.notes,
+        doors: (p.doors||[]).map(serializeDoor),
+        sub_panels: (p.subpanels||[]).map(sp => ({
+          name: sp.name, model: sp.model, location: sp.location,
+          address: sp.address !== undefined ? sp.address : 0,
+          notes: sp.notes,
+          doors: (sp.doors||[]).map(serializeDoor)
+        }))
+      };
+      if (!obj.doors.length) delete obj.doors;
+      if (!obj.sub_panels.length) delete obj.sub_panels;
+      return obj;
+    })
   };
 }
 
@@ -706,16 +901,8 @@ function loadData(data) {
   const sel = document.getElementById('projPlatform');
   if (proj.platform) { for (let o of sel.options) { if (o.value===proj.platform){sel.value=proj.platform;break;} } }
 
-  panels = (data.panels||[]).map(p => ({
-    id: genId(), name: p.name||'', location: p.location||'', model: p.model||'',
-    ip:      (p.network?.ip      || p.ip      || ''),
-    mask:    (p.network?.mask    || p.mask    || ''),
-    gateway: (p.network?.gateway || p.gateway || ''),
-    dns1:    (p.network?.dns1    || p.dns1    || ''),
-    dns2:    (p.network?.dns2    || p.dns2    || ''),
-    network: (p.network?.vlan    || (typeof p.network==='string' ? p.network : '') || ''),
-    notes: p.notes||'',
-    doors: (p.doors||[]).map(d => ({
+  function deserializeDoor(d) {
+    return {
       id: genId(), name: d.name||'', location: d.location||'',
       doorType: d.door_type||'', lockType: d.lock_type||'',
       readerIn:     d.reader_in ? (d.reader_in.type    ||'') : '',
@@ -725,6 +912,23 @@ function loadData(data) {
       rte:    d.rte_relay || '',
       status: d.status || '',
       notes:  d.notes  || ''
+    };
+  }
+  panels = (data.panels||[]).map(p => ({
+    id: genId(), name: p.name||'', location: p.location||'', model: p.model||'',
+    ip:      (p.network?.ip      || p.ip      || ''),
+    mask:    (p.network?.mask    || p.mask    || ''),
+    gateway: (p.network?.gateway || p.gateway || ''),
+    dns1:    (p.network?.dns1    || p.dns1    || ''),
+    dns2:    (p.network?.dns2    || p.dns2    || ''),
+    network: (p.network?.vlan    || (typeof p.network==='string' ? p.network : '') || ''),
+    notes: p.notes||'',
+    doors: (p.doors||[]).map(deserializeDoor),
+    subpanels: (p.sub_panels||[]).map((sp, spi) => ({
+      id: genId(), name: sp.name||'Sub-Panel '+spi, model: sp.model||'',
+      location: sp.location||'', address: sp.address !== undefined ? sp.address : spi,
+      notes: sp.notes||'',
+      doors: (sp.doors||[]).map(deserializeDoor)
     }))
   }));
   renderAll();
@@ -760,7 +964,14 @@ function loadFromURL() {
     document.getElementById('projDate').value    = proj.date       || '';
     const sel = document.getElementById('projPlatform');
     if (proj.platform) { for (let o of sel.options) { if (o.value===proj.platform){sel.value=proj.platform;break;} } }
-    panels = (state.panels||[]).map(p => ({ ...p, id: p.id||genId(), doors: (p.doors||[]).map(d=>({...d, id:d.id||genId()})) }));
+    panels = (state.panels||[]).map(p => ({
+      ...p, id: p.id||genId(),
+      doors: (p.doors||[]).map(d=>({...d, id:d.id||genId()})),
+      subpanels: (p.subpanels||[]).map(sp=>({
+        ...sp, id: sp.id||genId(),
+        doors: (sp.doors||[]).map(d=>({...d, id:d.id||genId()}))
+      }))
+    }));
     renderAll(); toast('Project loaded from link!');
   } catch(e) { console.warn('Could not load from URL:', e); }
 }
@@ -772,7 +983,8 @@ function tally(items) {
   return Object.entries(map).sort((a,b)=>b[1]-a[1]);
 }
 function showBOM() {
-  const allDoors = panels.flatMap(p => p.doors);
+  const allDoors = panels.flatMap(p => panelAllDoors(p));
+  const totalSubPanels = panels.reduce((s,p) => s + (p.subpanels||[]).length, 0);
   const total = allDoors.length;
   const readers   = tally(allDoors.map(d=>d.readerIn).filter(Boolean));
   const locks     = tally(allDoors.map(d=>d.lockType).filter(Boolean));
@@ -797,7 +1009,8 @@ function showBOM() {
 
   document.getElementById('bom-body').innerHTML = `
     <div class="bom-stats">
-      <div class="bom-stat"><div class="num">${panels.length}</div><div class="lbl">Panels</div></div>
+      <div class="bom-stat"><div class="num">${panels.length}</div><div class="lbl">Controllers</div></div>
+      ${totalSubPanels ? `<div class="bom-stat"><div class="num">${totalSubPanels}</div><div class="lbl">Sub-Panels</div></div>` : ''}
       <div class="bom-stat"><div class="num">${total}</div><div class="lbl">Total Doors</div></div>
       <div class="bom-stat"><div class="num">${readers.reduce((s,[,n])=>s+n,0)}</div><div class="lbl">Readers</div></div>
       <div class="bom-stat"><div class="num">${allDoors.filter(d=>d.dps).length}</div><div class="lbl">DPS</div></div>
@@ -929,22 +1142,28 @@ function loadExample() {
 
   panels = [
     {
-      id:genId(), name:'Main Panel — LNL-3300', location:'IDF Room 1A', model:'LNL-3300',
-      ip:'10.10.20.15', mask:'255.255.255.0', gateway:'10.10.20.1', dns1:'8.8.8.8', dns2:'8.8.4.4', network:'ACS-VLAN 20', notes:'Primary access panel',
+      id:genId(), name:'Controller — LNL-X2220', location:'IDF Room 1A', model:'LNL-X2220',
+      ip:'10.10.20.15', mask:'255.255.255.0', gateway:'10.10.20.1', dns1:'8.8.8.8', dns2:'8.8.4.4', network:'ACS-VLAN 20', notes:'Primary controller — 2 onboard reader ports + 2 sub-panels',
       doors:[
-        {id:genId(),name:'Main Lobby Entry',       location:'Level 1',  doorType:'Entry',         lockType:'Mag Lock',       readerIn:'HID Multiclass', readerInAddr:'0-0', rex:'Motion',      dps:'Supervised', rte:'Standard',   status:'Commissioned', notes:''},
-        {id:genId(),name:'Stairwell A — Level 1',  location:'Level 1',  doorType:'Stairwell',     lockType:'Electric Strike',readerIn:'HID Multiclass', readerInAddr:'0-1', rex:'Push Button',  dps:'Standard',   rte:'',           status:'Commissioned', notes:''},
-        {id:genId(),name:'Server Room',            location:'Level 1',  doorType:'Server Room',   lockType:'Mag Lock',       readerIn:'HID Signo',      readerInAddr:'0-2', rex:'Motion',       dps:'Supervised', rte:'Supervised', status:'Tested',       notes:'Biometric upgrade Q2'},
-        {id:genId(),name:'Loading Dock',           location:'Level 1',  doorType:'Loading Dock',  lockType:'Electric Strike',readerIn:'HID iCLASS',     readerInAddr:'0-3', rex:'Crash Bar',    dps:'Standard',   rte:'',           status:'Programmed',   notes:''},
-      ]
-    },
-    {
-      id:genId(), name:'Expansion Panel — LNL-1320', location:'IDF Room 2B', model:'LNL-1320',
-      ip:'10.10.20.16', mask:'255.255.255.0', gateway:'10.10.20.1', dns1:'8.8.8.8', dns2:'', network:'ACS-VLAN 20', notes:'',
-      doors:[
-        {id:genId(),name:'Suite 200 Entry',        location:'Level 2',  doorType:'Entry',         lockType:'Electric Strike',readerIn:'HID Multiclass', readerInAddr:'1-0', rex:'Motion',       dps:'Standard',   rte:'',           status:'Programmed',   notes:''},
-        {id:genId(),name:'Conference Room A',      location:'Level 2',  doorType:'Interior',      lockType:'Electric Mortise',readerIn:'HID Signo',    readerInAddr:'1-1', rex:'Push Button',  dps:'Standard',   rte:'',           status:'Designed',     notes:''},
-        {id:genId(),name:'Roof Access',            location:'Level R',  doorType:'Stairwell',     lockType:'Mag Lock',       readerIn:'HID iCLASS',     readerInAddr:'1-2', rex:'Push Button',  dps:'Supervised', rte:'Standard',   status:'Designed',     notes:'Alarm tie-in required'},
+        {id:genId(),name:'Main Lobby Entry',       location:'Level 1',  doorType:'Entry',         lockType:'Mag Lock',       readerIn:'HID Multiclass', readerInAddr:'0-0', rex:'Motion',      dps:'Supervised', rte:'Standard',   status:'Commissioned', notes:'Onboard port'},
+        {id:genId(),name:'Stairwell A — Level 1',  location:'Level 1',  doorType:'Stairwell',     lockType:'Electric Strike',readerIn:'HID Multiclass', readerInAddr:'0-1', rex:'Push Button',  dps:'Standard',   rte:'',           status:'Commissioned', notes:'Onboard port'},
+      ],
+      subpanels:[
+        {
+          id:genId(), name:'Reader Board A', model:'LNL-1320', location:'IDF Room 1A', address:1, notes:'RS-485 address 1',
+          doors:[
+            {id:genId(),name:'Server Room',        location:'Level 1',  doorType:'Server Room',   lockType:'Mag Lock',       readerIn:'HID Signo',      readerInAddr:'1-0', rex:'Motion',       dps:'Supervised', rte:'Supervised', status:'Tested',       notes:'Biometric upgrade Q2'},
+            {id:genId(),name:'Loading Dock',       location:'Level 1',  doorType:'Loading Dock',  lockType:'Electric Strike',readerIn:'HID iCLASS',     readerInAddr:'1-1', rex:'Crash Bar',    dps:'Standard',   rte:'',           status:'Programmed',   notes:''},
+          ]
+        },
+        {
+          id:genId(), name:'Reader Board B', model:'LNL-1320', location:'IDF Room 2B', address:2, notes:'RS-485 address 2',
+          doors:[
+            {id:genId(),name:'Suite 200 Entry',    location:'Level 2',  doorType:'Entry',         lockType:'Electric Strike',readerIn:'HID Multiclass', readerInAddr:'2-0', rex:'Motion',       dps:'Standard',   rte:'',           status:'Programmed',   notes:''},
+            {id:genId(),name:'Conference Room A',  location:'Level 2',  doorType:'Interior',      lockType:'Electric Mortise',readerIn:'HID Signo',    readerInAddr:'2-1', rex:'Push Button',  dps:'Standard',   rte:'',           status:'Designed',     notes:''},
+            {id:genId(),name:'Roof Access',        location:'Level R',  doorType:'Stairwell',     lockType:'Mag Lock',       readerIn:'HID iCLASS',     readerInAddr:'2-2', rex:'Push Button',  dps:'Supervised', rte:'Standard',   status:'Designed',     notes:'Alarm tie-in required'},
+          ]
+        }
       ]
     }
   ];
@@ -986,13 +1205,13 @@ if (window.lucide) {
 <!-- FOOTER -->
 <footer style="text-align:center;padding:24px 20px 32px;color:#64748b;font-size:12px;border-top:1px solid #2e3350;margin-top:8px;">
   <span style="background:#22263a;border:1px solid #2e3350;border-radius:20px;padding:3px 10px;font-weight:700;letter-spacing:0.03em;">
-    v0.5.260308 <!-- VERSION -->
+    v0.5.260310.01 <!-- VERSION -->
   </span>
   &nbsp;·&nbsp;
   ReaderPro.io
   &nbsp;·&nbsp;
   <!-- GITHUB URL -->
-  <a href="https://github.com/drounseville/readerpro" target="_blank" style="color:#4f8ef7;text-decoration:none;font-weight:600;">GitHub</a>
+  <a href="https://github.com/drounseville/readerpro.io" target="_blank" style="color:#4f8ef7;text-decoration:none;font-weight:600;">GitHub</a>
 </footer>
 
 </body>
